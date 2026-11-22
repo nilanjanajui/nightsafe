@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f5f7fd;
+  --tint: #e9effc;
+}
+
+body {
+  background: var(--bg);
+  color: #0f172a;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70;
+  }
+
+  /* text-base (16px) stops iOS zooming when an input is focused */
+  .input {
+    @apply w-full rounded-xl bg-[var(--tint)] px-3.5 py-3 text-base outline-none ring-1 ring-transparent placeholder:text-slate-400 focus:ring-slate-900;
+  }
+
+  .btn {
+    @apply flex w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-3.5 font-semibold text-white disabled:opacity-50;
+  }
+
+  .btn-soft {
+    @apply flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--tint)] px-4 py-3 font-medium text-slate-900 disabled:opacity-50;
+  }
+
+  .btn-danger {
+    @apply rounded-lg px-3 py-2 text-sm font-medium text-red-600 ring-1 ring-red-200;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
