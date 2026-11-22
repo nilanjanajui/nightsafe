@@ -42,11 +42,28 @@ setInterval(() => {
     });
 }, 3000);
 
-function sendAlert() {
+const DISTRESS_PHRASES = [
+    "বাঁচাও, আমাকে সাহায্য করো",
+    "আমাকে বাঁচাও",
+    "কে আছো বাঁচাও!",
+    "সাহায্য করুন, বিপদ!",
+    "আমাকে ছেড়ে দাও!",
+    "বাঁচাও বাঁচাও!",
+    "আমাকে সাহায্য করুন",
+];
+let phraseIndex = 0;
+
+function sendAlert(customBpm?: number) {
+    const transcript = DISTRESS_PHRASES[phraseIndex % DISTRESS_PHRASES.length];
+    phraseIndex++;
+
+    const bpmVal = customBpm ?? Math.round(state.bpm >= state.threshold ? state.bpm : (phraseIndex % 2 === 1 ? rand(104, 128) : state.bpm));
+    const priority = bpmVal >= state.threshold ? "HIGH" : "MEDIUM";
+
     const payload = {
-        transcript: "আমাকে বাঁচাও",
-        priority: state.bpm >= state.threshold ? "HIGH" : "MEDIUM",
-        bpm: Math.round(state.bpm),
+        transcript,
+        priority,
+        bpm: bpmVal,
         latitude: state.lat,
         longitude: state.lng,
         occurredAt: new Date().toISOString(),

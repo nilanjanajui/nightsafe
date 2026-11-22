@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
@@ -17,17 +18,34 @@ export default function InstallCard() {
     }, []);
 
     if (standalone) return null;
+
     return (
-        <section className="card space-y-3">
-            <h2 className="font-semibold">Install NightSafe on your phone</h2>
-            <p className="text-sm text-slate-500">Open it from your home screen like an app, full screen.</p>
+        <section className="rounded-2xl bg-surface-bright p-6 shadow-xs border border-outline-variant/30 space-y-3">
+            <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[20px]">install_mobile</span>
+                <h3 className="text-base font-bold text-primary font-display">Install NightSafe Companion PWA</h3>
+            </div>
+            <p className="text-xs sm:text-sm text-on-surface-variant">
+                Launch NightSafe directly from your mobile home screen with instant access, full-screen offline support, and dedicated telemetry alerts.
+            </p>
             {evt ? (
-                <button className="btn" onClick={() => evt.prompt()}>Install app</button>
+                <button
+                    type="button"
+                    className="btn text-xs sm:w-auto px-6 h-10 mt-2"
+                    onClick={() => evt.prompt()}
+                >
+                    <span className="material-symbols-outlined text-[16px]">download</span>
+                    <span>Install Application</span>
+                </button>
             ) : (
-                <details className="text-sm text-slate-600">
-                    <summary className="cursor-pointer font-medium text-slate-900">How to install</summary>
-                    <p className="mt-2">iPhone (Safari): tap Share, then Add to Home Screen.</p>
-                    <p>Android (Chrome): open the menu, then Install app.</p>
+                <details className="text-xs text-on-surface-variant pt-1">
+                    <summary className="cursor-pointer font-semibold text-primary hover:text-on-tertiary-container transition-colors">
+                        How to install on iOS or Android
+                    </summary>
+                    <div className="mt-2 space-y-1.5 p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 font-mono text-[11px]">
+                        <p>• <strong>iPhone (Safari):</strong> Tap Share icon, then select &ldquo;Add to Home Screen&rdquo;.</p>
+                        <p>• <strong>Android (Chrome):</strong> Tap the three dots menu, then select &ldquo;Install app&rdquo; or &ldquo;Add to Home screen&rdquo;.</p>
+                    </div>
                 </details>
             )}
         </section>

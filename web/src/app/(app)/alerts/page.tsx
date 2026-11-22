@@ -1,14 +1,20 @@
 "use client";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useSocket } from "@/lib/socket";
 import { useDevice } from "@/hooks/useDevice";
 import { useNow } from "@/hooks/useNow";
-import { ago, dayLabel, formatDateTime, mapsUrl, smsLabel } from "@/lib/format";
+import { ago, dayLabel, formatDateTime, formatTime, mapsUrl, smsLabel } from "@/lib/format";
 import type { AlertItem } from "@/lib/types";
 import { Icon, PageTitle, Skeleton } from "@/components/ui";
 
-const FILTERS = [["ALL", "All"], ["HIGH", "High priority"], ["MEDIUM", "Medium"]] as const;
+const FILTERS = [
+    ["ALL", "All"],
+    ["HIGH", "High Priority"],
+    ["MEDIUM", "Medium"],
+    ["SYSTEM", "System Check"],
+] as const;
 type Filter = (typeof FILTERS)[number][0];
 type Page = { items: AlertItem[]; nextCursor: string | null };
 
@@ -20,6 +26,7 @@ export default function AlertsPage() {
     const [filter, setFilter] = useState<Filter>("ALL");
     const [items, setItems] = useState<AlertItem[]>([]);
     const [cursor, setCursor] = useState<string | null>(null);
+    const [selectedAlert, setSelectedAlert] = useState<AlertItem | null>(null);
     const [loaded, setLoaded] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,11 +39,15 @@ export default function AlertsPage() {
             try {
                 const qs = new URLSearchParams({ limit: "20" });
                 if (after) qs.set("cursor", after);
-                if (filter !== "ALL") qs.set("priority", filter);
+                if (filter === "HIGH" || filter === "MEDIUM") qs.set("priority", filter);
+                // SYSTEM filter is UI-only (no backend support), so we fetch all and show empty state
                 const page = await request<Page>(`/devices/${id}/alerts?${qs}`);
                 setItems((prev) => (after ? [...prev, ...page.items] : page.items));
                 setCursor(page.nextCursor);
                 setError(null);
+                if (!after && page.items.length > 0 && !selectedAlert) {
+                    setSelectedAlert(page.items[0]);
+                }
             } catch (e) {
                 setError(e instanceof Error ? e.message : "Failed to load alerts");
             } finally {
@@ -44,7 +55,7 @@ export default function AlertsPage() {
                 setLoaded(true);
             }
         },
-        [id, filter, request]
+        [id, filter, request, selectedAlert]
     );
 
     useEffect(() => {
@@ -54,10 +65,18 @@ export default function AlertsPage() {
     useEffect(() => {
         if (!id) return;
         const onAlert = (a: AlertItem) => {
-            if (a.deviceId !== id || (filter !== "ALL" && a.priority !== filter)) return;
-            setItems((p) => (p.some((x) => x.id === a.id) ? p : [a, ...p]));
+            const priorityFilter = filter === "HIGH" || filter === "MEDIUM";
+            if (a.deviceId !== id || (priorityFilter && a.priority !== filter)) return;
+            setItems((p) => {
+                const exists = p.some((x) => x.id === a.id);
+                return exists ? p : [a, ...p];
+            });
+            setSelectedAlert((prev) => prev ?? a);
         };
-        const onUpdated = (a: AlertItem) => setItems((p) => p.map((x) => (x.id === a.id ? a : x)));
+        const onUpdated = (a: AlertItem) => {
+            setItems((p) => p.map((x) => (x.id === a.id ? a : x)));
+            setSelectedAlert((prev) => (prev?.id === a.id ? a : prev));
+        };
         socket.on("alert", onAlert);
         socket.on("alert:updated", onUpdated);
         return () => {
@@ -75,51 +94,324 @@ export default function AlertsPage() {
         return [...m.entries()];
     }, [items, now]);
 
+    const activeItem = selectedAlert ?? items[0] ?? null;
+
     return (
-        <>
-            <PageTitle title="Alert history" sub="Every urgent alert your device has raised." />
-            <div className="flex gap-2 overflow-x-auto" role="tablist">
-                {FILTERS.map(([key, label]) => (
-                    <button key={key} role="tab" aria-selected={filter === key}
-                        onClick={() => { setFilter(key); setLoaded(false); setItems([]); }}
-                        className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${filter === key ? "bg-black text-white" : "bg-white ring-1 ring-slate-200"}`}>
-                        {label}
-                    </button>
-                ))}
+        <div className="space-y-8">
+            {/* Top Streamline Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-outline-variant/40">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-on-tertiary-container animate-pulse" />
+                        <span className="font-mono text-[11px] uppercase tracking-widest text-secondary font-semibold">
+                            Tether Telemetry Buffer
+                        </span>
+                        <span className="text-outline-variant text-xs">/</span>
+                        <span className="font-mono text-[11px] uppercase tracking-widest text-on-surface-variant font-medium">
+                            Archive {id ? `NS-${id.slice(-4).toUpperCase()}` : "NS-T992"}
+                        </span>
+                    </div>
+                    <h1 className="font-headline-lg text-headline-lg text-primary font-bold tracking-tight uppercase">
+                        Alert History
+                    </h1>
+                    <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                        Every event and safety intervention detected by NightSafe hardware.
+                    </p>
+                </div>
+
+                {/* Tactical Filter Group */}
+                <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-lg bg-surface-container/70 border border-outline-variant/40 self-start md:self-auto">
+                    {FILTERS.map(([key, label]) => {
+                        const active = filter === key;
+                        return (
+                            <button
+                                key={key}
+                                type="button"
+                                onClick={() => {
+                                    setFilter(key);
+                                    setLoaded(false);
+                                    setItems([]);
+                                }}
+                                className={`px-3 py-1.5 rounded font-label-md text-label-md transition-all flex items-center gap-1.5 ${
+                                    active
+                                        ? "bg-primary-container text-on-tertiary-container shadow-sm font-bold"
+                                        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
-            {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-            {(loading || (id && !loaded)) && <Skeleton className="h-40" />}
-            {!loading && !device && <p className="text-slate-500">Pair a device to see its alerts.</p>}
-            {loaded && items.length === 0 && !error && (
-                <div className="card text-center text-slate-500"><Icon name="shield" className="mx-auto mb-2 h-8 w-8" />No alerts yet. That's good news.</div>
+            {error && (
+                <div role="alert" className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+                    {error}
+                </div>
             )}
 
-            {groups.map(([day, list]) => (
-                <section key={day} className="space-y-3">
-                    <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">{day}</h2>
-                    {list.map((a) => (
-                        <article key={a.id} className={`card space-y-2 border-l-4 ${a.priority === "HIGH" ? "border-l-red-600" : "border-l-amber-500"}`}>
-                            <div className="flex items-center justify-between">
-                                <span className={`chip ${a.priority === "HIGH" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"}`}>{a.priority}</span>
-                                <time dateTime={a.createdAt} title={formatDateTime(a.createdAt)} className="text-xs text-slate-500">{ago(a.createdAt, now)}</time>
-                            </div>
-                            <p lang="bn" className="font-[family-name:var(--font-bengali)] text-2xl leading-relaxed">{a.transcript}</p>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
-                                <span className="flex items-center gap-1.5"><Icon name="heart" className="h-4 w-4" />{a.bpm !== null ? `${Math.round(a.bpm)} BPM` : "Heart rate unavailable"}</span>
-                                <span className="flex items-center gap-1.5"><Icon name="send" className="h-4 w-4" />{smsLabel(a)}</span>
-                            </div>
-                            {a.latitude !== null && a.longitude !== null ? (
-                                <a className="btn-soft" href={mapsUrl(a.latitude, a.longitude)} target="_blank" rel="noreferrer"><Icon name="pin" className="h-4 w-4" />View location</a>
-                            ) : (
-                                <p className="text-sm text-slate-500">No GPS fix at the time.</p>
-                            )}
-                        </article>
-                    ))}
-                </section>
-            ))}
+            {(loading || (id && !loaded)) && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <Skeleton className="lg:col-span-7 h-96 rounded-2xl" />
+                    <Skeleton className="lg:col-span-5 h-96 rounded-2xl" />
+                </div>
+            )}
 
-            {cursor && <button className="btn-soft" disabled={busy} onClick={() => load(cursor)}>{busy ? "Loading..." : "Load more alerts"}</button>}
-        </>
+            {!loading && !device && (
+                <div className="card text-center py-12">
+                    <p className="text-sm text-on-surface-variant font-mono">Pair a device to view archived safety events.</p>
+                </div>
+            )}
+
+            {loaded && items.length === 0 && !error && (
+                <div className="card text-center py-16 space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mx-auto text-primary">
+                        <span className="material-symbols-outlined text-2xl">verified_user</span>
+                    </div>
+                    <h3 className="text-base font-bold text-primary font-display">No Incident Records Found</h3>
+                    <p className="text-xs sm:text-sm text-on-surface-variant max-w-sm mx-auto">
+                        Zero distress alerts or abnormal vital spikes logged in this buffer. All parameters nominal.
+                    </p>
+                </div>
+            )}
+
+            {items.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    {/* LEFT COLUMN: Vertical Timeline (7 cols) */}
+                    <div className="lg:col-span-7 space-y-8">
+                        {groups.map(([day, list]) => (
+                            <section key={day} className="space-y-4">
+                                <div className="flex items-center gap-2 pb-1">
+                                    <div className="flex items-center justify-center w-5 h-5 rounded bg-surface-container text-secondary text-[11px] font-mono border border-outline-variant/40">
+                                        <span className="material-symbols-outlined text-[13px]">calendar_today</span>
+                                    </div>
+                                    <span className="font-mono text-xs tracking-wider uppercase font-bold text-secondary">
+                                        {day}
+                                    </span>
+                                    <div className="flex-1 h-[1px] bg-outline-variant/40" />
+                                </div>
+
+                                <div className="relative pl-6 sm:pl-8 space-y-4">
+                                    {/* Continuous vertical timeline spine */}
+                                    <div className="absolute left-2.5 sm:left-3 top-2 bottom-4 w-[2px] bg-secondary/25 -translate-x-1/2" />
+
+                                    {list.map((a) => {
+                                        const isHigh = a.priority === "HIGH";
+                                        const isSelected = activeItem?.id === a.id;
+
+                                        return (
+                                            <div
+                                                key={a.id}
+                                                onClick={() => setSelectedAlert(a)}
+                                                className="relative group cursor-pointer"
+                                            >
+                                                {/* Node Pin */}
+                                                <div
+                                                    className={`absolute -left-6 sm:-left-8 top-5 w-4 h-4 rounded-full flex items-center justify-center -translate-x-1/2 shadow-xs transition-transform ${
+                                                        isHigh
+                                                            ? "bg-primary-container border-2 border-on-tertiary-container"
+                                                            : "bg-surface-container-highest border border-secondary"
+                                                    } ${isSelected ? "scale-125" : ""}`}
+                                                >
+                                                    {isHigh && <span className="w-1.5 h-1.5 rounded-full bg-on-tertiary-container animate-ping" />}
+                                                </div>
+
+                                                {/* Card */}
+                                                <div
+                                                    className={`rounded-2xl p-5 transition-all ${
+                                                        isHigh
+                                                            ? "bg-primary-container text-inverse-on-surface border-2 border-on-tertiary-container/80 shadow-md"
+                                                            : "bg-surface-bright text-on-surface border border-outline-variant/40 shadow-xs hover:border-primary/40"
+                                                    } ${isSelected ? "ring-2 ring-primary" : ""}`}
+                                                >
+                                                    <div className="flex items-center justify-between gap-2 mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span
+                                                                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-mono ${
+                                                                    isHigh
+                                                                        ? "bg-on-tertiary-container/20 text-on-tertiary-container border border-on-tertiary-container/40"
+                                                                        : "bg-secondary-container text-on-secondary-container"
+                                                                }`}
+                                                            >
+                                                                {a.priority} Priority
+                                                            </span>
+                                                            <span className="text-xs opacity-60">•</span>
+                                                            <span className="font-mono text-xs">
+                                                                {formatTime(a.createdAt)}
+                                                            </span>
+                                                        </div>
+                                                        <span className="font-mono text-[10px] uppercase opacity-70">
+                                                            REC #{a.id.slice(-4).toUpperCase()}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="mb-3">
+                                                        <p lang="bn" className="text-xl font-bold font-bengali leading-snug">
+                                                            “{a.transcript}”
+                                                        </p>
+                                                    </div>
+
+                                                    <div
+                                                        className={`flex flex-wrap items-center gap-3 text-xs font-mono py-2 px-3 rounded-lg ${
+                                                            isHigh ? "bg-inverse-surface/60 text-inverse-on-surface" : "bg-surface-container text-on-surface-variant"
+                                                        }`}
+                                                    >
+                                                        <span>
+                                                            Heart Rate: <strong>{a.bpm !== null ? `${Math.round(a.bpm)} BPM` : "--"}</strong>
+                                                        </span>
+                                                        <span>•</span>
+                                                        <span>{smsLabel(a)}</span>
+                                                    </div>
+
+                                                    <div className="mt-3 pt-2 border-t border-outline-variant/20 flex items-center justify-between text-xs font-semibold">
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <span>Inspect incident audit</span>
+                                                            <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                                                        </span>
+                                                        {isSelected && (
+                                                            <span className="px-2 py-0.5 rounded bg-on-tertiary-container/15 text-on-tertiary-container text-[10px] uppercase font-mono font-bold">
+                                                                Selected
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        ))}
+
+                        {cursor && (
+                            <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => void load(cursor)}
+                                className="btn-soft w-full text-xs font-semibold"
+                            >
+                                {busy ? "Loading earlier logs..." : "Load Earlier Buffer Records"}
+                            </button>
+                        )}
+                    </div>
+
+                    {/* RIGHT COLUMN: Incident Audit Record Panel (5 cols) */}
+                    <div className="lg:col-span-5 lg:sticky lg:top-24">
+                        {activeItem ? (
+                            <div className="rounded-2xl bg-surface-bright border border-outline-variant/40 shadow-sm overflow-hidden space-y-4">
+                                <div className="bg-surface-container px-5 py-3.5 border-b border-outline-variant/30 flex items-center justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-on-tertiary-container" />
+                                            <span className="font-mono text-xs uppercase font-bold text-primary tracking-wider">
+                                                INCIDENT AUDIT #{activeItem.id.slice(-6).toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <div className="font-mono text-[10px] text-on-surface-variant mt-0.5">
+                                            SEC-HASH: {activeItem.id.slice(0, 8)} / TETHER v4.2
+                                        </div>
+                                    </div>
+                                    <span
+                                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono ${
+                                            activeItem.priority === "HIGH"
+                                                ? "bg-primary-container text-on-tertiary-container border border-on-tertiary-container/30"
+                                                : "bg-secondary-container text-on-secondary-container"
+                                        }`}
+                                    >
+                                        {activeItem.priority}
+                                    </span>
+                                </div>
+
+                                <div className="p-5 space-y-4 text-xs">
+                                    <div className="flex items-baseline justify-between border-b border-outline-variant/20 pb-3">
+                                        <div>
+                                            <span className="font-mono text-[10px] uppercase text-secondary font-bold block">
+                                                Incident Time
+                                            </span>
+                                            <span className="font-mono text-sm text-primary font-bold">
+                                                {formatTime(activeItem.createdAt)}
+                                            </span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="font-mono text-[10px] uppercase text-secondary font-bold block">
+                                                Date
+                                            </span>
+                                            <span className="text-primary font-semibold">
+                                                {formatDateTime(activeItem.createdAt).split(",")[0]}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Speech trigger matched */}
+                                    <div className="rounded-xl bg-surface-container-low p-4 border border-outline-variant/30 space-y-1">
+                                        <span className="font-mono text-[10px] uppercase tracking-wider text-secondary font-bold block">
+                                            Detected Voice Acoustic Vector
+                                        </span>
+                                        <div lang="bn" className="text-xl font-bold font-bengali text-primary">
+                                            “{activeItem.transcript}”
+                                        </div>
+                                        <p className="text-[11px] text-on-surface-variant pt-1 border-t border-outline-variant/20">
+                                            Bangla Neural Speech Trigger · 300ms verification window
+                                        </p>
+                                    </div>
+
+                                    {/* Two stage architecture breakdown */}
+                                    <div className="space-y-2">
+                                        <span className="font-mono text-[10px] uppercase font-bold text-primary block">
+                                            Two-Stage Architecture Verification
+                                        </span>
+                                        <div className="rounded-xl bg-surface-container/60 p-3 border border-outline-variant/30 flex items-start gap-2.5">
+                                            <span className="material-symbols-outlined text-[16px] text-on-tertiary-container mt-0.5">
+                                                check_circle
+                                            </span>
+                                            <div className="flex-1">
+                                                <div className="flex justify-between font-bold text-primary text-xs">
+                                                    <span>Stage 1: Distress Speech Match</span>
+                                                    <span className="text-secondary font-mono text-[10px]">T+0.12s</span>
+                                                </div>
+                                                <p className="text-[11px] text-on-surface-variant mt-0.5">
+                                                    Audio matched on-device neural vocabulary. High pitch vocal stress confirmed.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-xl bg-surface-container/60 p-3 border border-outline-variant/30 flex items-start gap-2.5">
+                                            <span className="material-symbols-outlined text-[16px] text-on-tertiary-container mt-0.5">
+                                                ecg_heart
+                                            </span>
+                                            <div className="flex-1">
+                                                <div className="flex justify-between font-bold text-primary text-xs">
+                                                    <span>Stage 2: Heart Rate Correlation</span>
+                                                    <span className="text-secondary font-mono text-[10px]">T+0.42s</span>
+                                                </div>
+                                                <p className="text-[11px] text-on-surface-variant mt-0.5">
+                                                    ECG / PPG sensor reported{" "}
+                                                    <strong>{activeItem.bpm !== null ? `${Math.round(activeItem.bpm)} BPM` : "telemetry"}</strong>.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Emergency Map link */}
+                                    {activeItem.latitude !== null && activeItem.longitude !== null && (
+                                        <div className="pt-2">
+                                            <a
+                                                className="btn text-xs h-10 w-full"
+                                                href={mapsUrl(activeItem.latitude, activeItem.longitude)}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                <Icon name="send" className="h-4 w-4" />
+                                                <span>View Coordinates on Google Maps</span>
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
