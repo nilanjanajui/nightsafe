@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import { useSocket } from "@/lib/socket";
 import { useDevice } from "@/hooks/useDevice";
@@ -196,13 +197,17 @@ export default function AlertsPage() {
                                     {/* Continuous vertical timeline spine */}
                                     <div className="absolute left-2.5 sm:left-3 top-2 bottom-4 w-[2px] bg-secondary/25 -translate-x-1/2" />
 
-                                    {list.map((a) => {
+                                    {list.map((a, idx) => {
                                         const isHigh = a.priority === "HIGH";
                                         const isSelected = activeItem?.id === a.id;
 
                                         return (
-                                            <div
+                                            <motion.div
                                                 key={a.id}
+                                                initial={{ opacity: 0, x: -12 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ duration: 0.25, delay: idx * 0.04 }}
+                                                whileHover={{ x: 2 }}
                                                 onClick={() => setSelectedAlert(a)}
                                                 className="relative group cursor-pointer"
                                             >
@@ -276,7 +281,7 @@ export default function AlertsPage() {
                                                         )}
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </motion.div>
                                         );
                                     })}
                                 </div>
@@ -297,8 +302,16 @@ export default function AlertsPage() {
 
                     {/* RIGHT COLUMN: Incident Audit Record Panel (5 cols) */}
                     <div className="lg:col-span-5 lg:sticky lg:top-24">
-                        {activeItem ? (
-                            <div className="rounded-2xl bg-surface-bright border border-outline-variant/40 shadow-sm overflow-hidden space-y-4">
+                        <AnimatePresence mode="wait">
+                            {activeItem ? (
+                                <motion.div
+                                    key={activeItem.id}
+                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                                    transition={{ duration: 0.22 }}
+                                    className="rounded-2xl bg-surface-bright border border-outline-variant/40 shadow-sm overflow-hidden space-y-4"
+                                >
                                 <div className="bg-surface-container px-5 py-3.5 border-b border-outline-variant/30 flex items-center justify-between">
                                     <div>
                                         <div className="flex items-center gap-2">
@@ -407,8 +420,9 @@ export default function AlertsPage() {
                                         </div>
                                     )}
                                 </div>
-                            </div>
+                            </motion.div>
                         ) : null}
+                        </AnimatePresence>
                     </div>
                 </div>
             )}

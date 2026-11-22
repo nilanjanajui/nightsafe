@@ -339,3 +339,34 @@ html, body {
   text-transform: uppercase;
   color: #454840;
 }
+
+/* Tactical Page Animations */
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes reticle-spin-reverse {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes pulse-wave-scan {
+  0% { stroke-dashoffset: 400; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 20s linear infinite;
+  transform-origin: center;
+}
+
+.animate-reticle-reverse {
+  animation: reticle-spin-reverse 28s linear infinite;
+  transform-origin: center;
+}
+
+.animate-wave-scan {
+  stroke-dasharray: 400;
+  animation: pulse-wave-scan 4s ease-in-out infinite alternate;
+}

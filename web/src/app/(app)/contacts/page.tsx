@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import { useDevice } from "@/hooks/useDevice";
 import { useToast } from "@/lib/toast";
@@ -117,7 +118,12 @@ export default function ContactsPage() {
             </header>
 
             {/* TOP ALERT PATH BANNER */}
-            <section className="relative overflow-hidden rounded-2xl bg-surface-container p-6 shadow-xs border border-outline-variant/30">
+            <motion.section
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="relative overflow-hidden rounded-2xl bg-surface-container p-6 shadow-xs border border-outline-variant/30"
+            >
                 <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="space-y-1.5 max-w-2xl">
                         <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider font-mono">
@@ -150,7 +156,7 @@ export default function ContactsPage() {
                         </div>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* TWO-COLUMN WORKSPACE: CONTACTS LIST & ADD CONTACT */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -185,63 +191,76 @@ export default function ContactsPage() {
                     )}
 
                     <ul className="space-y-3">
-                        {contacts?.map((c, idx) => (
-                            <li
-                                key={c.id}
-                                className="p-4 sm:p-5 rounded-2xl bg-surface-bright shadow-xs border border-outline-variant/30 flex items-center justify-between gap-4 transition-all hover:border-outline-variant"
-                            >
-                                <div className="flex items-center gap-3.5 min-w-0">
-                                    {/* Monogram Avatar */}
-                                    <div className="w-11 h-11 rounded-full bg-primary-container text-tertiary-fixed-dim flex items-center justify-center shrink-0 font-bold font-display text-sm relative shadow-xs">
-                                        {c.name.slice(0, 1).toUpperCase()}
-                                        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-surface-bright flex items-center justify-center">
-                                            <span className="w-2 h-2 rounded-full bg-on-tertiary-container" />
-                                        </span>
-                                    </div>
-
-                                    <div className="space-y-1 min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <h4 className="text-sm font-bold text-primary truncate font-display">
-                                                {c.name}
-                                            </h4>
-                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-surface-container text-secondary font-mono">
-                                                {c.relationship} {idx === 0 ? "· Primary" : ""}
+                        <AnimatePresence>
+                            {contacts?.map((c, idx) => (
+                                <motion.li
+                                    key={c.id}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.96 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.92 }}
+                                    transition={{ duration: 0.2 }}
+                                    whileHover={{ y: -2 }}
+                                    className="p-4 sm:p-5 rounded-2xl bg-surface-bright shadow-xs border border-outline-variant/30 flex items-center justify-between gap-4 transition-all hover:border-outline-variant"
+                                >
+                                    <div className="flex items-center gap-3.5 min-w-0">
+                                        {/* Monogram Avatar */}
+                                        <div className="w-11 h-11 rounded-full bg-primary-container text-tertiary-fixed-dim flex items-center justify-center shrink-0 font-bold font-display text-sm relative shadow-xs">
+                                            {c.name.slice(0, 1).toUpperCase()}
+                                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-surface-bright flex items-center justify-center">
+                                                <span className="w-2 h-2 rounded-full bg-on-tertiary-container" />
                                             </span>
                                         </div>
-                                        <p className="font-mono text-xs text-on-surface tracking-wider">
-                                            {c.phone}
-                                        </p>
-                                        <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
-                                            <span className="text-on-tertiary-container font-bold">✓</span>
-                                            <span>SMS Verified · Emergency Calling Enabled</span>
+
+                                        <div className="space-y-1 min-w-0">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <h4 className="text-sm font-bold text-primary truncate font-display">
+                                                    {c.name}
+                                                </h4>
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-surface-container text-secondary font-mono">
+                                                    {c.relationship} {idx === 0 ? "· Primary" : ""}
+                                                </span>
+                                            </div>
+                                            <p className="font-mono text-xs text-on-surface tracking-wider">
+                                                {c.phone}
+                                            </p>
+                                            <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+                                                <span className="text-on-tertiary-container font-bold">✓</span>
+                                                <span>SMS Verified · Emergency Calling Enabled</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="flex items-center gap-2 shrink-0">
-                                    <a
-                                        href={`tel:${c.phone}`}
-                                        aria-label={`Call ${c.name}`}
-                                        className="p-2 rounded-lg bg-surface-container text-primary hover:bg-surface-container-high transition-colors"
-                                    >
-                                        <Icon name="phone" className="h-4 w-4" />
-                                    </a>
-                                    <button
-                                        type="button"
-                                        onClick={() => setTarget(c)}
-                                        className="btn-danger text-xs px-2.5 py-1.5"
-                                        aria-label={`Remove ${c.name}`}
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            </li>
-                        ))}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <a
+                                            href={`tel:${c.phone}`}
+                                            aria-label={`Call ${c.name}`}
+                                            className="p-2 rounded-lg bg-surface-container text-primary hover:bg-surface-container-high transition-colors"
+                                        >
+                                            <Icon name="phone" className="h-4 w-4" />
+                                        </a>
+                                        <button
+                                            type="button"
+                                            onClick={() => setTarget(c)}
+                                            className="btn-danger text-xs px-2.5 py-1.5"
+                                            aria-label={`Remove ${c.name}`}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                </motion.li>
+                            ))}
+                        </AnimatePresence>
                     </ul>
                 </div>
 
                 {/* RIGHT COLUMN: Provision New Contact Form (Span 5) */}
-                <div className="lg:col-span-5">
+                <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.1 }}
+                    className="lg:col-span-5"
+                >
                     <form onSubmit={add} className="card rounded-2xl bg-surface-bright border border-outline-variant/30 p-6 space-y-4">
                         <div>
                             <span className="font-mono text-[10px] uppercase tracking-wider text-on-surface-variant font-bold block mb-1">
@@ -330,7 +349,7 @@ export default function ContactsPage() {
                                 : "Register Contact"}
                         </button>
                     </form>
-                </div>
+                </motion.div>
             </div>
 
             {/* REMOVE CONTACT CONFIRMATION SHEET */}

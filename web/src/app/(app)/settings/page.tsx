@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import { useDevice } from "@/hooks/useDevice";
 import { useToast } from "@/lib/toast";
@@ -48,7 +49,12 @@ export default function SettingsPage() {
     return (
         <div className="space-y-8">
             {/* 1. Page Header */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-outline-variant/40">
+            <motion.header
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-outline-variant/40"
+            >
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-on-tertiary-container animate-pulse" />
@@ -70,11 +76,16 @@ export default function SettingsPage() {
                         <span>Node Encrypted (AES-256)</span>
                     </div>
                 </div>
-            </header>
+            </motion.header>
 
             {/* 2. Hardware Diagnostic Strip */}
             {device && (
-                <section className="rounded-2xl bg-primary-container text-inverse-on-surface p-6 sm:p-7 shadow-md relative overflow-hidden border border-primary-fixed-dim/20">
+                <motion.section
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.05 }}
+                    className="rounded-2xl bg-primary-container text-inverse-on-surface p-6 sm:p-7 shadow-md relative overflow-hidden border border-primary-fixed-dim/20"
+                >
                     <div className="relative z-10 flex flex-col gap-5">
                         {/* Top Operational Bar */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 gap-3 border-b border-primary-fixed-dim/15">
@@ -190,7 +201,7 @@ export default function SettingsPage() {
                             </button>
                         </div>
                     </div>
-                </section>
+                </motion.section>
             )}
 
             {loading && <Skeleton className="h-64 w-full rounded-2xl" />}
@@ -212,7 +223,12 @@ export default function SettingsPage() {
 
             {/* 3. Interactive Alert Threshold Control */}
             {device && (
-                <section className="rounded-2xl bg-surface-bright p-6 sm:p-8 shadow-xs border border-outline-variant/30 space-y-6">
+                <motion.section
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.1 }}
+                    className="rounded-2xl bg-surface-bright p-6 sm:p-8 shadow-xs border border-outline-variant/30 space-y-6"
+                >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-1">
                             <div className="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm uppercase tracking-wider font-semibold">
@@ -331,14 +347,19 @@ export default function SettingsPage() {
                             <span>{busy ? "Transmitting Parameter..." : "Save Biometric Threshold"}</span>
                         </button>
                     </div>
-                </section>
+                </motion.section>
             )}
 
             {/* 4. Progressive Web App Installation Card */}
             <InstallCard />
 
             {/* 5. Account & Operator Credentials */}
-            <section className="rounded-2xl bg-surface-bright p-6 shadow-xs border border-outline-variant/30 space-y-4">
+            <motion.section
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.15 }}
+                className="rounded-2xl bg-surface-bright p-6 shadow-xs border border-outline-variant/30 space-y-4"
+            >
                 <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
                     <div>
                         <span className="font-mono text-[10px] uppercase tracking-wider text-secondary font-bold block">
@@ -371,7 +392,7 @@ export default function SettingsPage() {
                         <span>Sign Out of Terminal</span>
                     </button>
                 </div>
-            </section>
+            </motion.section>
         </div>
     );
 }

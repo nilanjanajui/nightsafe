@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import { useDevice } from "@/hooks/useDevice";
 import { SocketProvider } from "@/lib/socket";
@@ -144,9 +145,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <ConnectionStrip />
 
                     {/* Main Content Area */}
-                    <main className="flex-1 w-full max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-12">
+                    <motion.main
+                        key={pathname}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, ease: "easeOut" }}
+                        className="flex-1 w-full max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-12"
+                    >
                         {children}
-                    </main>
+                    </motion.main>
 
                     {/* Mobile Navigation */}
                     <BottomNav />

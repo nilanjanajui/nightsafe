@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import { useDevice } from "@/hooks/useDevice";
 import { useLive } from "@/hooks/useLive";
@@ -114,7 +115,12 @@ export default function Dashboard() {
     return (
         <div className="space-y-8">
             {/* PAGE HEADER */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <motion.header
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                className="flex flex-col md:flex-row md:items-end justify-between gap-4"
+            >
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-on-tertiary-container animate-pulse" />
@@ -142,84 +148,95 @@ export default function Dashboard() {
                         <span>Tether Protocol v4.2 Encrypted</span>
                     </div>
                 </div>
-            </header>
+            </motion.header>
 
             {/* ACTIVE EMERGENCY MODE (HIGH / MEDIUM DISTRESS EVENT) */}
-            {alert && (
-                <section
-                    role="alert"
-                    className="relative overflow-hidden rounded-2xl bg-primary-container text-inverse-on-surface p-6 sm:p-8 shadow-xl border-2 border-on-tertiary-container/80 animate-in fade-in slide-in-from-top-4"
-                >
-                    {/* Top Emergency Bar */}
-                    <div className="relative z-10 flex flex-col gap-4">
-                        <div className="flex items-center justify-between pb-3 border-b border-primary-fixed-dim/20">
-                            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-error/20 text-error-container">
-                                <span className="material-symbols-outlined text-[18px] text-error fill-current">warning</span>
-                                <span className="font-label-md text-label-md uppercase tracking-wider font-bold text-inverse-on-surface">
-                                    CRITICAL DISTRESS EVENT ACTIVE · {ago(alert.createdAt, now)}
-                                </span>
-                            </div>
-                            <button
-                                onClick={dismissAlert}
-                                className="px-3 py-1.5 rounded-lg bg-surface-container-low text-primary font-label-md text-label-md font-semibold hover:bg-surface-container transition-all active:scale-[0.98]"
-                            >
-                                Confirm Safe (Dismiss)
-                            </button>
-                        </div>
-
-                        {/* Detected Audio Acoustic Pattern */}
-                        <div className="py-2">
-                            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-container block mb-1">
-                                Acoustic Phrase Detected (98.4% Confidence Match)
-                            </span>
-                            <div className="p-4 rounded-xl bg-surface-container-low text-primary shadow-inner">
-                                <p lang="bn" className="font-display-lg text-display-lg leading-tight tracking-tight font-bold font-bengali">
-                                    “{alert.transcript}”
-                                </p>
-                                <div className="mt-2 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-                                    <span>Bengali Model v4.1 Acoustic Trigger</span>
-                                    <span className="font-telemetry-num text-telemetry-num uppercase">CH-02 MIC ARRAY</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Emergency Biometrics & Actions */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                            <div className="flex items-center gap-6 text-on-primary-container font-label-md text-label-md">
-                                <div>
-                                    <span className="block text-[10px] uppercase font-label-sm">Cardiac Velocity</span>
-                                    <span className="font-display-lg text-2xl font-bold text-inverse-on-surface font-telemetry-num">
-                                        {alert.bpm !== null ? `${Math.round(alert.bpm)} BPM` : "--"}
+            <AnimatePresence>
+                {alert && (
+                    <motion.section
+                        initial={{ opacity: 0, scale: 0.96, y: -12 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: -12 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 240 }}
+                        role="alert"
+                        className="relative overflow-hidden rounded-2xl bg-primary-container text-inverse-on-surface p-6 sm:p-8 shadow-xl border-2 border-on-tertiary-container/80"
+                    >
+                        {/* Top Emergency Bar */}
+                        <div className="relative z-10 flex flex-col gap-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-primary-fixed-dim/20">
+                                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-error/20 text-error-container">
+                                    <span className="material-symbols-outlined text-[18px] text-error fill-current animate-pulse">warning</span>
+                                    <span className="font-label-md text-label-md uppercase tracking-wider font-bold text-inverse-on-surface">
+                                        CRITICAL DISTRESS EVENT ACTIVE · {ago(alert.createdAt, now)}
                                     </span>
                                 </div>
-                                <div className="h-6 w-[1px] bg-primary-fixed-dim/20" />
-                                <div>
-                                    <span className="block text-[10px] uppercase font-label-sm">SMS Relay</span>
-                                    <span className="font-telemetry-num text-inverse-on-surface font-bold">
-                                        {smsLabel(alert)}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {alert.latitude !== null && alert.longitude !== null && (
-                                <a
-                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-on-tertiary-container text-tertiary font-title-md text-title-md font-bold transition-transform hover:scale-[1.02] shadow-sm"
-                                    href={mapsUrl(alert.latitude, alert.longitude)}
-                                    target="_blank"
-                                    rel="noreferrer"
+                                <button
+                                    onClick={dismissAlert}
+                                    className="px-3 py-1.5 rounded-lg bg-surface-container-low text-primary font-label-md text-label-md font-semibold hover:bg-surface-container transition-all active:scale-[0.98]"
                                 >
-                                    <Icon name="send" className="h-4 w-4" />
-                                    <span>Open Coordinates in Google Maps</span>
-                                </a>
-                            )}
+                                    Confirm Safe (Dismiss)
+                                </button>
+                            </div>
+
+                            {/* Detected Audio Acoustic Pattern */}
+                            <div className="py-2">
+                                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-container block mb-1">
+                                    Acoustic Phrase Detected (98.4% Confidence Match)
+                                </span>
+                                <div className="p-4 rounded-xl bg-surface-container-low text-primary shadow-inner">
+                                    <p lang="bn" className="font-display-lg text-display-lg leading-tight tracking-tight font-bold font-bengali">
+                                        “{alert.transcript}”
+                                    </p>
+                                    <div className="mt-2 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+                                        <span>Bengali Model v4.1 Acoustic Trigger</span>
+                                        <span className="font-telemetry-num text-telemetry-num uppercase">CH-02 MIC ARRAY</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Emergency Biometrics & Actions */}
+                            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                                <div className="flex items-center gap-6 text-on-primary-container font-label-md text-label-md">
+                                    <div>
+                                        <span className="block text-[10px] uppercase font-label-sm">Cardiac Velocity</span>
+                                        <span className="font-display-lg text-2xl font-bold text-inverse-on-surface font-telemetry-num">
+                                            {alert.bpm !== null ? `${Math.round(alert.bpm)} BPM` : "--"}
+                                        </span>
+                                    </div>
+                                    <div className="h-6 w-[1px] bg-primary-fixed-dim/20" />
+                                    <div>
+                                        <span className="block text-[10px] uppercase font-label-sm">SMS Relay</span>
+                                        <span className="font-telemetry-num text-inverse-on-surface font-bold">
+                                            {smsLabel(alert)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {alert.latitude !== null && alert.longitude !== null && (
+                                    <a
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-on-tertiary-container text-tertiary font-title-md text-title-md font-bold transition-transform hover:scale-[1.02] shadow-sm"
+                                        href={mapsUrl(alert.latitude, alert.longitude)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <Icon name="send" className="h-4 w-4" />
+                                        <span>Open Coordinates in Google Maps</span>
+                                    </a>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </section>
-            )}
+                    </motion.section>
+                )}
+            </AnimatePresence>
 
             {/* SAFETY CIRCLE NOTICE IF EMPTY */}
             {contactCount === 0 && (
-                <div className="rounded-2xl bg-tertiary-fixed/20 p-5 border border-on-tertiary-container/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="rounded-2xl bg-tertiary-fixed/20 p-5 border border-on-tertiary-container/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
                     <div className="space-y-1">
                         <p className="font-title-md text-title-md text-primary font-bold">
                             No Emergency Contacts Registered
@@ -231,11 +248,16 @@ export default function Dashboard() {
                     <Link href="/contacts" className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-on-tertiary-container text-tertiary font-label-md text-label-md font-bold uppercase tracking-wide hover:opacity-90 transition-opacity text-xs whitespace-nowrap">
                         Set Up Safety Circle
                     </Link>
-                </div>
+                </motion.div>
             )}
 
             {/* SIGNATURE LIVE STATUS HERO (INVERTED TACTICAL ENCLAVE) */}
-            <section className="relative overflow-hidden rounded-2xl bg-primary-container text-inverse-on-surface p-6 md:p-8 shadow-xl">
+            <motion.section
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.05 }}
+                className="relative overflow-hidden rounded-2xl bg-primary-container text-inverse-on-surface p-6 md:p-8 shadow-xl"
+            >
                 {/* Background SVG Contour / Radial Waveform Motif */}
                 <div aria-hidden="true" className="absolute inset-0 pointer-events-none opacity-[0.08]">
                     <svg className="w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 1000 400">
@@ -363,12 +385,17 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* TWO-COLUMN MID SECTION: LOCATION & DEVICE HEALTH */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* LEFT COLUMN: CURRENT LOCATION (SPAN 7) */}
-                <section className="lg:col-span-7 bg-surface-bright rounded-2xl p-6 shadow-xs border border-outline-variant/40 flex flex-col space-y-4">
+                <motion.section
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.1 }}
+                    className="lg:col-span-7 bg-surface-bright rounded-2xl p-6 shadow-xs border border-outline-variant/40 flex flex-col space-y-4"
+                >
                     <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
                         <div>
                             <div className="flex items-center gap-2">
@@ -416,10 +443,15 @@ export default function Dashboard() {
                             </p>
                         </div>
                     )}
-                </section>
+                </motion.section>
 
                 {/* RIGHT COLUMN: DEVICE HEALTH DIAGNOSTIC PANEL (SPAN 5) */}
-                <section className="lg:col-span-5 bg-surface-bright rounded-2xl p-6 shadow-xs border border-outline-variant/40 flex flex-col justify-between space-y-6">
+                <motion.section
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.15 }}
+                    className="lg:col-span-5 bg-surface-bright rounded-2xl p-6 shadow-xs border border-outline-variant/40 flex flex-col justify-between space-y-6"
+                >
                     <div className="space-y-1">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -511,23 +543,30 @@ export default function Dashboard() {
 
                     {/* Action Button */}
                     <div className="pt-2">
-                        <button
+                        <motion.button
                             type="button"
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={handleSelfCheck}
                             disabled={runningCheck}
-                            className="w-full h-11 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.99] shadow-xs border border-outline-variant/30"
+                            className="w-full h-11 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-2 transition-all shadow-xs border border-outline-variant/30 cursor-pointer"
                         >
                             <span className="material-symbols-outlined text-[18px]">
                                 {runningCheck ? "refresh" : "tune"}
                             </span>
                             <span>{runningCheck ? "Executing Hardware Self-Check..." : "Run Hardware Self-Check"}</span>
-                        </button>
+                        </motion.button>
                     </div>
-                </section>
+                </motion.section>
             </div>
 
             {/* BOTTOM SECTION: RECENT ACTIVITY */}
-            <section className="bg-surface-bright rounded-2xl p-6 shadow-xs border border-outline-variant/40 space-y-4">
+            <motion.section
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.2 }}
+                className="bg-surface-bright rounded-2xl p-6 shadow-xs border border-outline-variant/40 space-y-4"
+            >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
@@ -592,7 +631,7 @@ export default function Dashboard() {
                         No previous incident records stored in local buffer.
                     </div>
                 )}
-            </section>
+            </motion.section>
         </div>
     );
 }
