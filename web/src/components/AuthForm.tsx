@@ -19,11 +19,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const isLogin = mode === "login";
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        setError(null);
         setLoading(true);
 
         try {
@@ -37,6 +39,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             router.push("/dashboard");
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Authentication failed";
+            setError(message);
             toast(message, "error");
         } finally {
             setLoading(false);
@@ -58,17 +61,27 @@ export default function AuthForm({ mode }: AuthFormProps) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="card space-y-4">
+                    {error && (
+                        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
+                            {error}
+                        </div>
+                    )}
+
                     {!isLogin && (
                         <div>
                             <label className="label" htmlFor="name">
-                                Name
+                                Full Name
                             </label>
                             <input
                                 id="name"
                                 type="text"
                                 required
+                                minLength={2}
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                onChange={(e) => {
+                                    setName(e.target.value);
+                                    setError(null);
+                                }}
                                 placeholder="Jane Doe"
                                 className="input"
                                 disabled={loading}
@@ -78,14 +91,17 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
                     <div>
                         <label className="label" htmlFor="email">
-                            Email
+                            Email address
                         </label>
                         <input
                             id="email"
                             type="email"
                             required
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => {
+                                setEmail(e.target.value);
+                                setError(null);
+                            }}
                             placeholder="you@example.com"
                             className="input"
                             disabled={loading}
@@ -100,16 +116,25 @@ export default function AuthForm({ mode }: AuthFormProps) {
                             id="password"
                             type="password"
                             required
+                            minLength={isLogin ? undefined : 8}
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                setError(null);
+                            }}
                             placeholder="••••••••"
                             className="input"
                             disabled={loading}
                         />
+                        {!isLogin && (
+                            <p className="mt-1 text-xs text-slate-500">
+                                Must be at least 8 characters
+                            </p>
+                        )}
                     </div>
 
                     <button type="submit" disabled={loading} className="btn mt-2">
-                        {loading ? "Please wait..." : isLogin ? "Sign in" : "Sign up"}
+                        {loading ? "Please wait..." : isLogin ? "Sign in" : "Create account"}
                     </button>
                 </form>
 
@@ -134,4 +159,3 @@ export default function AuthForm({ mode }: AuthFormProps) {
         </div>
     );
 }
-
