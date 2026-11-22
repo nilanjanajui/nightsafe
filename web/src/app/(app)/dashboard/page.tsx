@@ -93,7 +93,7 @@ export default function Dashboard() {
                 <div>
                     <h1 className="font-headline-lg text-headline-lg text-primary">Pair NightSafe Device</h1>
                     <p className="font-body-md text-body-md text-on-surface-variant mt-1.5">
-                        Link your physical Raspberry Pi 4B companion device to activate live telemetry and emergency broadcasts.
+                        Link your NightSafe device to activate live telemetry and distress alerts.
                     </p>
                 </div>
                 <Link href="/pair" className="btn max-w-xs mx-auto">
@@ -145,7 +145,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3 self-start md:self-auto">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-variant font-label-md text-label-md shadow-xs border border-outline-variant/30">
                         <span className="material-symbols-outlined text-[16px] text-secondary">encrypted</span>
-                        <span>Tether Protocol v4.2 Encrypted</span>
+                        <span>Encrypted in transit (HTTPS)</span>
                     </div>
                 </div>
             </motion.header>
@@ -174,22 +174,21 @@ export default function Dashboard() {
                                     onClick={dismissAlert}
                                     className="px-3 py-1.5 rounded-lg bg-surface-container-low text-primary font-label-md text-label-md font-semibold hover:bg-surface-container transition-all active:scale-[0.98]"
                                 >
-                                    Confirm Safe (Dismiss)
+                                    Dismiss
                                 </button>
                             </div>
 
                             {/* Detected Audio Acoustic Pattern */}
                             <div className="py-2">
                                 <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-container block mb-1">
-                                    Acoustic Phrase Detected (98.4% Confidence Match)
+                                    Distress phrase detected
                                 </span>
                                 <div className="p-4 rounded-xl bg-surface-container-low text-primary shadow-inner">
                                     <p lang="bn" className="font-display-lg text-display-lg leading-tight tracking-tight font-bold font-bengali">
                                         “{alert.transcript}”
                                     </p>
                                     <div className="mt-2 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-                                        <span>Bengali Model v4.1 Acoustic Trigger</span>
-                                        <span className="font-telemetry-num text-telemetry-num uppercase">CH-02 MIC ARRAY</span>
+                                        <span>On-device Bangla speech model</span>
                                     </div>
                                 </div>
                             </div>
@@ -198,7 +197,7 @@ export default function Dashboard() {
                             <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
                                 <div className="flex items-center gap-6 text-on-primary-container font-label-md text-label-md">
                                     <div>
-                                        <span className="block text-[10px] uppercase font-label-sm">Cardiac Velocity</span>
+                                        <span className="block text-[10px] uppercase font-label-sm">Heart rate</span>
                                         <span className="font-display-lg text-2xl font-bold text-inverse-on-surface font-telemetry-num">
                                             {alert.bpm !== null ? `${Math.round(alert.bpm)} BPM` : "--"}
                                         </span>
@@ -282,7 +281,7 @@ export default function Dashboard() {
                             </span>
                             <span className="text-on-primary-container/40">|</span>
                             <span className="font-label-md text-label-md text-primary-fixed-dim">
-                                Guardian Pi 4B Mobile Unit
+                                NightSafe device
                             </span>
                         </div>
                         <div className="flex items-center gap-2 font-label-sm text-label-sm text-on-primary-container">
@@ -312,7 +311,7 @@ export default function Dashboard() {
                                         BPM
                                     </span>
                                     <span className="font-label-sm text-label-sm text-primary-fixed-dim uppercase">
-                                        Resting Pulse
+                                        Heart rate
                                     </span>
                                 </div>
                             </div>
@@ -342,7 +341,7 @@ export default function Dashboard() {
                                 <Sparkline values={live.trend} threshold={device.bpmThreshold} dark={true} bpm={bpmVal ?? undefined} />
                                 <div className="flex items-center justify-between font-label-sm text-label-sm text-on-primary-container/70 pt-1">
                                     <span>Safe Band: 60 BPM</span>
-                                    <span>Active Sampling: 250 Hz Lead I</span>
+                                    <span>Active Sampling: ECG sensor</span>
                                 </div>
                             </div>
                             <p className="font-body-sm text-body-sm text-on-primary-container pt-1">
@@ -368,7 +367,7 @@ export default function Dashboard() {
                             <span className="text-inverse-on-surface">GPS</span>
                             <span className="text-primary-fixed-dim/60">·</span>
                             <span className="text-primary-fixed-dim">
-                                {live.lat !== null ? "High Accuracy (±4m)" : "Searching"}
+                                {live.lat !== null ? "Active fix" : "Searching"}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -421,7 +420,8 @@ export default function Dashboard() {
                             <div className="flex items-center justify-between pt-1">
                                 <div className="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
                                     <span className="material-symbols-outlined text-[16px] text-secondary">share_location</span>
-                                    <span>Live Geofence: <strong>Home Zone A (Safe)</strong></span>
+                                    <span>Live GPS</span>
+                                    <span>Active</span>
                                 </div>
                                 <a
                                     className="inline-flex items-center gap-1 font-label-md text-label-md text-primary font-semibold hover:text-on-tertiary-container transition-colors"
@@ -464,9 +464,9 @@ export default function Dashboard() {
                                 Nominal
                             </span>
                         </div>
-                        <p className="font-title-md text-title-md text-primary font-semibold">NightSafe Pi 4B</p>
+                        <p className="font-title-md text-title-md text-primary font-semibold">NightSafe device</p>
                         <p className="font-label-sm text-label-sm text-on-surface-variant font-telemetry-num">
-                            Hardware v2.1 · Rev 4091A
+                            Raspberry Pi 5
                         </p>
                     </div>
 
@@ -495,8 +495,8 @@ export default function Dashboard() {
                                     <span className="material-symbols-outlined text-[18px]">mic</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="font-label-md text-label-md text-primary font-medium">Dual Beamforming Mics</span>
-                                    <span className="font-body-sm text-body-sm text-on-surface-variant">DSP Acoustic Model</span>
+                                    <span className="font-label-md text-label-md text-primary font-medium">Microphone</span>
+                                    <span className="font-body-sm text-body-sm text-on-surface-variant">Bangla DSP Speech Model</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1.5 text-on-tertiary-container font-label-md text-label-md font-semibold">
@@ -512,13 +512,13 @@ export default function Dashboard() {
                                     <span className="material-symbols-outlined text-[18px]">cell_tower</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="font-label-md text-label-md text-primary font-medium">Cellular GSM / SMS</span>
-                                    <span className="font-body-sm text-body-sm text-on-surface-variant">SIM7600 Direct Mod</span>
+                                    <span className="font-label-md text-label-md text-primary font-medium">SMS via Textbee</span>
+                                    <span className="font-body-sm text-body-sm text-on-surface-variant">Android phone + internet</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1.5 text-on-tertiary-container font-label-md text-label-md font-semibold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-on-tertiary-container" />
-                                <span>Connected (4G LTE)</span>
+                                <span>Active</span>
                             </div>
                         </div>
 

@@ -21,11 +21,20 @@ export function useDevice() {
     }, [ready, session, request]);
 
     useEffect(() => {
-        if (ready && session) {
-            void reload();
-        } else if (ready && !session) {
-            setState({ loading: false, device: null, error: null });
-        }
+        let active = true;
+        void (async () => {
+            if (ready && session) {
+                await reload();
+            } else if (ready && !session) {
+                await Promise.resolve();
+                if (active) {
+                    setState({ loading: false, device: null, error: null });
+                }
+            }
+        })();
+        return () => {
+            active = false;
+        };
     }, [ready, session, reload]);
 
     const setDevice = (device: Device) => setState((s) => ({ ...s, device }));

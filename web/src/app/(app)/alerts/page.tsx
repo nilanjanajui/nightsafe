@@ -6,9 +6,9 @@ import { useAuth } from "@/lib/auth";
 import { useSocket } from "@/lib/socket";
 import { useDevice } from "@/hooks/useDevice";
 import { useNow } from "@/hooks/useNow";
-import { ago, dayLabel, formatDateTime, formatTime, mapsUrl, smsLabel } from "@/lib/format";
+import { dayLabel, formatDateTime, formatTime, mapsUrl, smsLabel } from "@/lib/format";
 import type { AlertItem } from "@/lib/types";
-import { Icon, PageTitle, Skeleton } from "@/components/ui";
+import { Icon, Skeleton } from "@/components/ui";
 
 const FILTERS = [
     ["ALL", "All"],
@@ -33,35 +33,54 @@ export default function AlertsPage() {
     const [error, setError] = useState<string | null>(null);
     const id = device?.id;
 
-    const load = useCallback(
-        async (after?: string | null) => {
-            if (!id) return;
-            if (after) setBusy(true);
+    useEffect(() => {
+        let active = true;
+        if (!id) return;
+        void (async () => {
             try {
                 const qs = new URLSearchParams({ limit: "20" });
-                if (after) qs.set("cursor", after);
                 if (filter === "HIGH" || filter === "MEDIUM") qs.set("priority", filter);
                 // SYSTEM filter is UI-only (no backend support), so we fetch all and show empty state
                 const page = await request<Page>(`/devices/${id}/alerts?${qs}`);
-                setItems((prev) => (after ? [...prev, ...page.items] : page.items));
+                if (!active) return;
+                setItems(page.items);
                 setCursor(page.nextCursor);
                 setError(null);
-                if (!after && page.items.length > 0 && !selectedAlert) {
-                    setSelectedAlert(page.items[0]);
+                if (page.items.length > 0) {
+                    setSelectedAlert((prev) => prev ?? page.items[0]);
                 }
+            } catch (e) {
+                if (active) setError(e instanceof Error ? e.message : "Failed to load alerts");
+            } finally {
+                if (active) {
+                    setBusy(false);
+                    setLoaded(true);
+                }
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [id, filter, request]);
+
+    const loadMore = useCallback(
+        async (after: string) => {
+            if (!id || busy) return;
+            setBusy(true);
+            try {
+                const qs = new URLSearchParams({ limit: "20", cursor: after });
+                if (filter === "HIGH" || filter === "MEDIUM") qs.set("priority", filter);
+                const page = await request<Page>(`/devices/${id}/alerts?${qs}`);
+                setItems((prev) => [...prev, ...page.items]);
+                setCursor(page.nextCursor);
             } catch (e) {
                 setError(e instanceof Error ? e.message : "Failed to load alerts");
             } finally {
                 setBusy(false);
-                setLoaded(true);
             }
         },
-        [id, filter, request, selectedAlert]
+        [id, filter, request, busy]
     );
-
-    useEffect(() => {
-        void load();
-    }, [load]);
 
     useEffect(() => {
         if (!id) return;
@@ -130,8 +149,10 @@ export default function AlertsPage() {
                                 type="button"
                                 onClick={() => {
                                     setFilter(key);
-                                    setLoaded(false);
                                     setItems([]);
+                                    setCursor(null);
+                                    setSelectedAlert(null);
+                                    setLoaded(false);
                                 }}
                                 className={`px-3 py-1.5 rounded font-label-md text-label-md transition-all flex items-center gap-1.5 ${
                                     active
@@ -292,7 +313,7 @@ export default function AlertsPage() {
                             <button
                                 type="button"
                                 disabled={busy}
-                                onClick={() => void load(cursor)}
+                                onClick={() => void loadMore(cursor)}
                                 className="btn-soft w-full text-xs font-semibold"
                             >
                                 {busy ? "Loading earlier logs..." : "Load Earlier Buffer Records"}
@@ -321,7 +342,7 @@ export default function AlertsPage() {
                                             </span>
                                         </div>
                                         <div className="font-mono text-[10px] text-on-surface-variant mt-0.5">
-                                            SEC-HASH: {activeItem.id.slice(0, 8)} / TETHER v4.2
+                                            ID: {activeItem.id.slice(0, 8)} · Encrypted in transit (HTTPS)
                                         </div>
                                     </div>
                                     <span

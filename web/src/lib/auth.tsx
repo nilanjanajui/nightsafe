@@ -4,9 +4,8 @@ import {
     createContext,
     useCallback,
     useContext,
-    useEffect,
     useMemo,
-    useState,
+    useSyncExternalStore,
     type ReactNode,
 } from "react";
 import { api, ApiError } from "./api";
@@ -26,35 +25,59 @@ type Ctx = {
 
 const KEY = "nightsafe.session";
 
-function getStoredSession(): Session | null {
+let cachedRaw: string | null = "__init__";
+let cachedSession: Session | null = null;
+const listeners = new Set<() => void>();
+
+function notify() {
+    for (const listener of listeners) {
+        listener();
+    }
+}
+
+function getSnapshot(): Session | null {
     if (typeof window === "undefined") return null;
     try {
-        // 1. Check sessionStorage (persists across page reloads in this tab)
+        // One-time migration: if an old sessionStorage entry exists, move it to localStorage
         const fromSession = sessionStorage.getItem(KEY);
         if (fromSession) {
-            return JSON.parse(fromSession) as Session;
+            localStorage.setItem(KEY, fromSession);
+            sessionStorage.removeItem(KEY);
         }
+        // Clean up legacy session cookie if present
+        if (document.cookie.includes("nightsafe_sess")) {
+            document.cookie = "nightsafe_sess=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+        }
+    } catch {}
 
-        // 2. Check browser session cookie (persists across tabs within current browser session)
-        const match = document.cookie.match(new RegExp("(^| )nightsafe_sess=([^;]+)"));
-        if (match && match[2]) {
-            const parsed = JSON.parse(decodeURIComponent(match[2])) as Session;
-            sessionStorage.setItem(KEY, JSON.stringify(parsed));
-            return parsed;
+    const raw = typeof window !== "undefined" ? localStorage.getItem(KEY) : null;
+    if (raw !== cachedRaw) {
+        cachedRaw = raw;
+        try {
+            cachedSession = raw ? (JSON.parse(raw) as Session) : null;
+        } catch {
+            cachedSession = null;
         }
-
-        // 3. Fallback: check legacy localStorage for seamless upgrade
-        const fromLocal = localStorage.getItem(KEY);
-        if (fromLocal) {
-            const parsed = JSON.parse(fromLocal) as Session;
-            sessionStorage.setItem(KEY, JSON.stringify(parsed));
-            localStorage.removeItem(KEY);
-            return parsed;
-        }
-    } catch {
-        return null;
     }
-    return null;
+    return cachedSession;
+}
+
+function getServerSnapshot(): undefined {
+    return undefined;
+}
+
+function subscribe(callback: () => void) {
+    listeners.add(callback);
+    const onStorage = (e: StorageEvent) => {
+        if (e.key === KEY) {
+            callback();
+        }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+        listeners.delete(callback);
+        window.removeEventListener("storage", onStorage);
+    };
 }
 
 function persistSession(session: Session | null) {
@@ -62,36 +85,27 @@ function persistSession(session: Session | null) {
     try {
         if (session) {
             const str = JSON.stringify(session);
-            // Save to tab session storage
-            sessionStorage.setItem(KEY, str);
-            // Save to browser session cookie (no Expires/Max-Age = cleared when browser session closes)
-            document.cookie = `nightsafe_sess=${encodeURIComponent(str)}; path=/; SameSite=Lax`;
-            localStorage.removeItem(KEY);
+            cachedRaw = str;
+            cachedSession = session;
+            localStorage.setItem(KEY, str);
         } else {
-            sessionStorage.removeItem(KEY);
+            cachedRaw = null;
+            cachedSession = null;
             localStorage.removeItem(KEY);
-            document.cookie = "nightsafe_sess=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
         }
     } catch {}
+    notify();
 }
 
 const AuthCtx = createContext<Ctx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    // Synchronously check on client initialization
-    const [session, setSession] = useState<Session | null>(getStoredSession);
-    const [ready, setReady] = useState(false);
-
-    // Re-verify immediately after mount
-    useEffect(() => {
-        const active = getStoredSession();
-        setSession(active);
-        setReady(true);
-    }, []);
+    const rawSession = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+    const ready = rawSession !== undefined;
+    const session = rawSession ?? null;
 
     const logout = useCallback(() => {
         persistSession(null);
-        setSession(null);
     }, []);
 
     const login = useCallback(async (email: string, password: string) => {
@@ -105,7 +119,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: res.user.email,
         };
         persistSession(sess);
-        setSession(sess);
     }, []);
 
     const signup = useCallback(async (name: string, email: string, password: string) => {
@@ -119,7 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: res.user.email,
         };
         persistSession(sess);
-        setSession(sess);
     }, []);
 
     const request = useCallback(
@@ -131,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
                 return await api<T>(path, { ...opts, token });
             } catch (e) {
-                // Only log out if a valid token was sent and rejected as expired/unauthorized
+                // Only log out if a valid token was sent and rejected as unauthorized
                 if (e instanceof ApiError && e.status === 401 && token) {
                     logout();
                 }

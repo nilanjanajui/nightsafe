@@ -8,7 +8,7 @@ import { useToast } from "@/lib/toast";
 import { normalizePhone } from "@/lib/format";
 import { MAX_CONTACTS, RELATIONSHIPS, type Contact, type Relationship } from "@/lib/types";
 import BottomSheet from "@/components/BottomSheet";
-import { Icon, PageTitle, Skeleton } from "@/components/ui";
+import { Icon, Skeleton } from "@/components/ui";
 
 export default function ContactsPage() {
     const { request } = useAuth();
@@ -93,7 +93,7 @@ export default function ContactsPage() {
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-on-tertiary-container animate-ping" />
                         <span className="font-mono text-[11px] text-on-surface-variant uppercase tracking-widest font-semibold">
-                            Cellular Relay Matrix // Tier-1
+                            Safety Circle
                         </span>
                     </div>
                     <h1 className="font-headline-lg text-headline-lg text-primary font-bold tracking-tight uppercase">
@@ -136,7 +136,7 @@ export default function ContactsPage() {
                             Make sure your contacts can actually receive critical messages from the device.
                         </h2>
                         <p className="text-xs sm:text-sm text-on-surface-variant">
-                            SMS alerts are dispatched directly via the NightSafe hardware cellular unit, bypassing public internet routing to guarantee sub-second delivery.
+                            SMS alerts are sent via the Textbee API through a linked Android phone over the internet.
                         </p>
                     </div>
 
@@ -152,7 +152,7 @@ export default function ContactsPage() {
                         </button>
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-surface text-on-surface-variant font-mono text-[11px] border border-outline-variant/20">
                             <span className="text-on-tertiary-container font-bold">✓</span>
-                            <span>Verified via Hardware SIM Gateway</span>
+                            <span>Sent via Textbee (internet)</span>
                         </div>
                     </div>
                 </div>
@@ -226,7 +226,7 @@ export default function ContactsPage() {
                                             </p>
                                             <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
                                                 <span className="text-on-tertiary-container font-bold">✓</span>
-                                                <span>SMS Verified · Emergency Calling Enabled</span>
+                                                <span>SMS alerts enabled</span>
                                             </div>
                                         </div>
                                     </div>

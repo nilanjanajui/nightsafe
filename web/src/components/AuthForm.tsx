@@ -126,7 +126,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                         NightSafe
                     </h1>
                     <p className="text-sm sm:text-base text-primary-fixed-dim max-w-sm font-normal">
-                        Precision safety telemetry, real-time physiological monitoring, and sub-second emergency broadcast.
+                        Precision safety telemetry, real-time physiological monitoring, and emergency alerts.
                     </p>
 
                     {/* Dynamic Micro-Waveform Monitor Track with Live Scan Animation */}
@@ -137,9 +137,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-on-tertiary-container opacity-75" />
                                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-on-tertiary-container" />
                                 </span>
-                                Tether Carrier Integrity
+                                Heart rate monitor
                             </span>
-                            <span className="font-mono font-bold text-tertiary-fixed-dim">99.98%</span>
+                            <span className="font-mono font-bold text-tertiary-fixed-dim">Live</span>
                         </div>
                         <div className="relative overflow-hidden rounded">
                             <svg className="w-full h-8 text-tertiary-fixed-dim/90" fill="none" viewBox="0 0 360 32">
@@ -166,7 +166,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-on-primary-container font-mono tracking-wider uppercase">
                         <div className="flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-on-tertiary-container/80" />
-                            <span>Node Encryption AES-256 · Tether v4.2</span>
+                            <span>Encrypted in transit (HTTPS)</span>
                         </div>
                         <div className="opacity-70">SEC-ID #882-OP-9</div>
                     </div>

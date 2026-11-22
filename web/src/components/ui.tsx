@@ -74,9 +74,9 @@ export const PageTitle = ({
     </header>
 );
 
-export function NightSafeLogo({ className = "h-8 w-auto" }: { className?: string }) {
+export function NightSafeLogo({ className = "" }: { className?: string }) {
     return (
-        <div className="flex items-center gap-2.5">
+        <div className={`flex items-center gap-2.5 ${className}`}>
             <div className="relative w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center shadow-xs">
                 <svg className="w-5 h-5 text-tertiary-fixed-dim" fill="none" viewBox="0 0 32 32">
                     <circle cx="16" cy="16" r="12" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1" />

@@ -108,7 +108,7 @@ export default function PairPage() {
                         <span className="material-symbols-outlined text-[16px] text-secondary">info</span>
                         <span>Where to find this code:</span>
                     </div>
-                    <p>• On the silver tamper-evident label on the underside of your Raspberry Pi 4B chassis.</p>
+                    <p>• On the label on the underside of your Raspberry Pi 5 unit.</p>
                     <p>• In development mode: check the output of `npm run seed` in your server console.</p>
                 </div>
 

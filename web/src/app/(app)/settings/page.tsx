@@ -16,7 +16,6 @@ export default function SettingsPage() {
     const toast = useToast();
     const [draft, setDraft] = useState<number | null>(null);
     const [busy, setBusy] = useState(false);
-    const [checkingFw, setCheckingFw] = useState(false);
 
     const value = draft ?? device?.bpmThreshold ?? 100;
 
@@ -30,21 +29,13 @@ export default function SettingsPage() {
             });
             setDevice({ ...device, bpmThreshold: r.bpmThreshold });
             setDraft(null);
-            toast("Threshold calibrated & synced to hardware", "ok");
+            toast("Saved. An online device applies it right away; an offline one gets it when it reconnects.", "ok");
         } catch (err) {
             toast(err instanceof Error ? err.message : "Could not calibrate threshold", "error");
         } finally {
             setBusy(false);
         }
     }
-
-    const handleFwCheck = () => {
-        setCheckingFw(true);
-        setTimeout(() => {
-            setCheckingFw(false);
-            toast("Firmware check: Hardware is on latest production build v2.4.1", "ok");
-        }, 1200);
-    };
 
     return (
         <div className="space-y-8">
@@ -73,7 +64,7 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2.5 self-start md:self-auto font-mono text-xs">
                     <div className="px-3 py-1.5 rounded-lg bg-surface-container flex items-center gap-2 text-on-surface-variant border border-outline-variant/30 shadow-xs">
                         <span className="material-symbols-outlined text-[16px] text-secondary">encrypted</span>
-                        <span>Node Encrypted (AES-256)</span>
+                        <span>Encrypted in transit (HTTPS)</span>
                     </div>
                 </div>
             </motion.header>
@@ -103,7 +94,7 @@ export default function SettingsPage() {
                                         </span>
                                     </div>
                                     <h2 className="text-base sm:text-lg font-bold text-surface-bright font-display tracking-tight uppercase">
-                                        NightSafe Raspberry Pi 4B Companion
+                                        NightSafe Raspberry Pi 5
                                     </h2>
                                 </div>
                             </div>
@@ -152,7 +143,7 @@ export default function SettingsPage() {
                                     <span className="w-1.5 h-1.5 rounded-full bg-secondary-fixed" />
                                 </div>
                                 <div className="text-sm font-bold text-surface-bright font-display">Calibrated</div>
-                                <p className="text-[11px] text-on-primary-container">Optical Lead I Differential</p>
+                                <p className="text-[11px] text-on-primary-container">Hobby ECG sensor</p>
                             </div>
 
                             {/* GPS */}
@@ -165,7 +156,7 @@ export default function SettingsPage() {
                                     <span className="w-1.5 h-1.5 rounded-full bg-secondary-fixed" />
                                 </div>
                                 <div className="text-sm font-bold text-surface-bright font-display">Active Fix</div>
-                                <p className="text-[11px] text-on-primary-container">Multi-GNSS Constellation</p>
+                                <p className="text-[11px] text-on-primary-container">SIM808 (GPS only)</p>
                             </div>
 
                             {/* GSM */}
@@ -173,33 +164,15 @@ export default function SettingsPage() {
                                 <div className="flex items-center justify-between text-on-primary-container font-mono text-[10px] uppercase tracking-wider font-semibold">
                                     <span className="flex items-center gap-1.5">
                                         <span className="material-symbols-outlined text-[15px]">cell_tower</span>
-                                        GSM / SMS Modem
+                                        SMS via Textbee
                                     </span>
                                     <span className="w-1.5 h-1.5 rounded-full bg-secondary-fixed" />
                                 </div>
-                                <div className="text-sm font-bold text-surface-bright font-display">Ready</div>
-                                <p className="text-[11px] text-on-primary-container">Cellular SMS Direct Path</p>
+                                <div className="text-sm font-bold text-surface-bright font-display">Android phone</div>
+                                <p className="text-[11px] text-on-primary-container">Textbee HTTPS API</p>
                             </div>
                         </div>
 
-                        {/* Firmware & Action Strip */}
-                        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-on-primary-container text-xs font-mono">
-                            <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[18px] text-tertiary-fixed-dim">verified_user</span>
-                                <span>Firmware: <strong className="text-surface-bright font-bold">v2.4.1</strong> (Latest Production Build)</span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleFwCheck}
-                                disabled={checkingFw}
-                                className="px-3.5 py-1.5 rounded-lg bg-surface-container-low/10 hover:bg-surface-container-low/20 text-surface-bright text-xs font-semibold font-mono transition-all inline-flex items-center gap-1.5 self-start sm:self-auto border border-primary-fixed-dim/20"
-                            >
-                                <span className="material-symbols-outlined text-[15px]">
-                                    {checkingFw ? "refresh" : "update"}
-                                </span>
-                                <span>{checkingFw ? "Verifying Hash..." : "Check for Updates"}</span>
-                            </button>
-                        </div>
                     </div>
                 </motion.section>
             )}
@@ -318,9 +291,6 @@ export default function SettingsPage() {
                                     Recommended threshold based on nominal baseline is <strong>95–105 BPM</strong>.
                                 </span>
                             </div>
-                            <span className="font-label-sm text-label-sm text-outline font-semibold uppercase tracking-wider">
-                                Calibration: Verified ECG-04
-                            </span>
                         </div>
                     </div>
 
@@ -344,7 +314,7 @@ export default function SettingsPage() {
                             onClick={save}
                         >
                             <span className="material-symbols-outlined text-[16px]">save</span>
-                            <span>{busy ? "Transmitting Parameter..." : "Save Biometric Threshold"}</span>
+                            <span>{busy ? "Saving..." : "Save Threshold"}</span>
                         </button>
                     </div>
                 </motion.section>

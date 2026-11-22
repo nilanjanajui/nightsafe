@@ -31,7 +31,7 @@ export default function Sparkline({
     const baseline = 34;
 
     // Generate authentic Lead I P-Q-R-S-T electrocardiogram waveform
-    const { pathData, peakPoints, latestPeak } = useMemo(() => {
+    const { pathData, latestPeak } = useMemo(() => {
         // Dynamic interval between cardiac cycles (higher BPM = closer spikes)
         // At 60 BPM: ~160px; at 80 BPM: ~125px; at 120 BPM: ~85px
         const clampedBpm = Math.max(45, Math.min(180, currentBpm));
