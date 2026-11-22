@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NightSafe is offline</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #f5f7fd;
+            color: #0f172a;
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        button {
+            margin-top: 1rem;
+            padding: .8rem 1.6rem;
+            border: 0;
+            border-radius: .75rem;
+            background: #000;
+            color: #fff;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <h1>You're offline</h1>
+        <p>NightSafe needs an internet connection to show live data. Your device keeps working on its own.</p>
+        <button onclick="location.reload()">Try again</button>
+    </div>
+</body>
+
+</html>
