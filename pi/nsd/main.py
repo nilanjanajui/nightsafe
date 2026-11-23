@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from typing import Any, Optional
 
-from nsd import asr, audio, buzzer, classify, cloud, config, delivery, gps, heart, outbox, priority
+from nsd import asr, audio, buzzer, classify, cloud, config, delivery, gps, heart, outbox, priority, remote_audio
 
 logger = logging.getLogger("nsd")
 
@@ -159,7 +159,10 @@ def main() -> None:
     asr_engine.load()
 
     audio_queue: queue.Queue = queue.Queue(maxsize=4)
-    listener = audio.AudioListener(audio_queue)
+    if config.AUDIO_SOURCE == "remote":
+        listener = remote_audio.RemoteAudioReceiver(audio_queue, config.REMOTE_AUDIO_PORT)
+    else:
+        listener = audio.AudioListener(audio_queue)
     listener.start()
     is_listening[0] = True
     logger.info("All daemon subsystems running. Listening for audio...")

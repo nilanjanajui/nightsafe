@@ -43,6 +43,8 @@ ASR_THREADS: int = int(os.getenv("ASR_THREADS", "3"))
 MIC_NAME: str = os.getenv("MIC_NAME", "")
 MIC_VOLUME: int = int(os.getenv("MIC_VOLUME", "28"))
 VAD_MODE: int = int(os.getenv("VAD_MODE", "2"))
+AUDIO_SOURCE: str = os.getenv("AUDIO_SOURCE", "mic").lower()
+REMOTE_AUDIO_PORT: int = int(os.getenv("REMOTE_AUDIO_PORT", "8000"))
 GPS_PORT: str = os.getenv("GPS_PORT", "/dev/ttyAMA0")
 GPS_BAUD: int = int(os.getenv("GPS_BAUD", "9600"))
 
