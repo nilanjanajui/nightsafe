@@ -401,10 +401,9 @@ export default function AlertsPage() {
                                             <div className="flex-1">
                                                 <div className="flex justify-between font-bold text-primary text-xs">
                                                     <span>Stage 1: Distress Speech Match</span>
-                                                    <span className="text-secondary font-mono text-[10px]">T+0.12s</span>
                                                 </div>
                                                 <p className="text-[11px] text-on-surface-variant mt-0.5">
-                                                    Audio matched on-device neural vocabulary. High pitch vocal stress confirmed.
+                                                    Audio matched on-device neural vocabulary.
                                                 </p>
                                             </div>
                                         </div>
@@ -415,11 +414,10 @@ export default function AlertsPage() {
                                             </span>
                                             <div className="flex-1">
                                                 <div className="flex justify-between font-bold text-primary text-xs">
-                                                    <span>Stage 2: Heart Rate Correlation</span>
-                                                    <span className="text-secondary font-mono text-[10px]">T+0.42s</span>
+                                                    <span>Stage 2: Urgency check (text classifier)</span>
                                                 </div>
                                                 <p className="text-[11px] text-on-surface-variant mt-0.5">
-                                                    ECG / PPG sensor reported{" "}
+                                                    Heart rate sensor reported{" "}
                                                     <strong>{activeItem.bpm !== null ? `${Math.round(activeItem.bpm)} BPM` : "telemetry"}</strong>.
                                                 </p>
                                             </div>

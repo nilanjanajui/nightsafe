@@ -108,7 +108,7 @@ export default function PairPage() {
                         <span className="material-symbols-outlined text-[16px] text-secondary">info</span>
                         <span>Where to find this code:</span>
                     </div>
-                    <p>• On the label on the underside of your Raspberry Pi 5 unit.</p>
+                    <p>The pairing code printed by npm run seed on the server.</p>
                     <p>• In development mode: check the output of `npm run seed` in your server console.</p>
                 </div>
 

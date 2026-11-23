@@ -8,7 +8,6 @@ import { useAuth } from "@/lib/auth";
 import { useDevice } from "@/hooks/useDevice";
 import { useLive } from "@/hooks/useLive";
 import { useNow } from "@/hooks/useNow";
-import { useToast } from "@/lib/toast";
 import { ago, formatDateTime, formatTime, mapsUrl, smsLabel, uptimeLabel } from "@/lib/format";
 import type { AlertItem, Contact } from "@/lib/types";
 import Sparkline from "@/components/Sparkline";
@@ -24,10 +23,8 @@ export default function Dashboard() {
     const { loading, device, error, reload } = useDevice();
     const { live, alert, dismissAlert } = useLive(device?.id);
     const now = useNow(1000);
-    const toast = useToast();
     const [contactCount, setContactCount] = useState<number | null>(null);
     const [recentAlert, setRecentAlert] = useState<AlertItem | null>(null);
-    const [runningCheck, setRunningCheck] = useState(false);
 
     useEffect(() => {
         let alive = true;
@@ -50,13 +47,7 @@ export default function Dashboard() {
         };
     }, [device?.id, request, alert]);
 
-    const handleSelfCheck = () => {
-        setRunningCheck(true);
-        setTimeout(() => {
-            setRunningCheck(false);
-            toast("Hardware diagnostic completed: All sensors nominal", "ok");
-        }, 1200);
-    };
+
 
     if (loading) {
         return (
@@ -339,8 +330,7 @@ export default function Dashboard() {
                                     <span className="font-telemetry-num text-tertiary-fixed-dim/80">Threshold {device.bpmThreshold} BPM</span>
                                 </div>
                                 <Sparkline values={live.trend} threshold={device.bpmThreshold} dark={true} bpm={bpmVal ?? undefined} />
-                                <div className="flex items-center justify-between font-label-sm text-label-sm text-on-primary-container/70 pt-1">
-                                    <span>Safe Band: 60 BPM</span>
+                                <div className="flex items-center justify-end font-label-sm text-label-sm text-on-primary-container/70 pt-1">
                                     <span>Active Sampling: ECG sensor</span>
                                 </div>
                             </div>
@@ -371,16 +361,12 @@ export default function Dashboard() {
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-on-tertiary-container" />
+                            <span className={`w-1.5 h-1.5 rounded-full ${live.bpm !== null ? "bg-on-tertiary-container" : "bg-outline"}`} />
                             <span className="text-inverse-on-surface">ECG</span>
                             <span className="text-primary-fixed-dim/60">·</span>
-                            <span className="text-tertiary-fixed-dim font-medium">Synchronized</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-secondary-fixed" />
-                            <span className="text-inverse-on-surface">Fall Detection</span>
-                            <span className="text-primary-fixed-dim/60">·</span>
-                            <span className="text-primary-fixed-dim font-medium">Armed (6-Axis IMU)</span>
+                            <span className="text-tertiary-fixed-dim font-medium">
+                                {live.bpm !== null ? "Reading" : "No signal"}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -482,9 +468,9 @@ export default function Dashboard() {
                                     <span className="font-body-sm text-body-sm text-on-surface-variant">Lead I Differential</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1.5 text-on-tertiary-container font-label-md text-label-md font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-on-tertiary-container" />
-                                <span>Active & Calibrated</span>
+                            <div className={`flex items-center gap-1.5 font-label-md text-label-md font-semibold ${live.bpm !== null ? "text-on-tertiary-container" : "text-on-surface-variant"}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${live.bpm !== null ? "bg-on-tertiary-container" : "bg-outline"}`} />
+                                <span>{live.bpm !== null ? "Reading" : "No signal"}</span>
                             </div>
                         </div>
 
@@ -541,22 +527,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Action Button */}
-                    <div className="pt-2">
-                        <motion.button
-                            type="button"
-                            whileHover={{ scale: 1.01 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleSelfCheck}
-                            disabled={runningCheck}
-                            className="w-full h-11 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-2 transition-all shadow-xs border border-outline-variant/30 cursor-pointer"
-                        >
-                            <span className="material-symbols-outlined text-[18px]">
-                                {runningCheck ? "refresh" : "tune"}
-                            </span>
-                            <span>{runningCheck ? "Executing Hardware Self-Check..." : "Run Hardware Self-Check"}</span>
-                        </motion.button>
-                    </div>
+
                 </motion.section>
             </div>
 
