@@ -1,83 +1,193 @@
 # NightSafe
 
-NightSafe is a wearable distress-detection capstone system. A Raspberry Pi 5 listens for Bangla distress phrases, classifies them in two stages, reads heart rate and GPS coordinates, and texts saved emergency contacts. A Next.js Progressive Web Application (PWA) paired with an Express/Socket.IO/MongoDB backend allows the device owner to pair their hardware unit, monitor live telemetry, review past alerts, and manage emergency contacts.
+**A personal safety system that listens for Bangla distress speech, reads heart rate from a hobby ECG sensor, and sends an SMS alert with live GPS coordinates to trusted contacts.**
 
-## Repository Structure
+> Built for Raspberry Pi 5 · Next.js web dashboard · Node.js backend · Python daemon
 
-- `server/`: Express 5, Socket.IO, Mongoose, and TypeScript backend API and real-time telemetry relay.
-- `web/`: Next.js App Router, Tailwind CSS v4, and TypeScript frontend PWA.
-- `pi/`: Python 3.11+ daemon (package `nsd`) running on the Raspberry Pi 5.
+---
 
-## Architectural Facts & Constraints
+## Table of Contents
 
-- **SMS Delivery**: SMS alerts leave the Raspberry Pi 5 via the Textbee HTTPS API; a linked Android phone with its own active SIM card delivers the messages over cellular networks. The SIM808 module on the device is used strictly for GPS location fixes.
-- **Audio Privacy**: Audio is processed entirely on-device and is never recorded, stored, or transmitted. Only the matched transcript text, heart rate, and GPS coordinates of actual alert events are stored in MongoDB. Live telemetry is relayed in real time over WebSockets and is not persisted.
-- **Transport Security**: Client-server and device communications use standard HTTPS and WSS (TLS). There is no proprietary AES encryption layer, mesh network, Bluetooth connectivity, or battery telemetry.
-- **Sensors**: Heart rate measurements originate from a hobbyist ECG sensor for threshold detection, not medical diagnosis.
-- **Account Model**: One hardware device per user account.
+- [What It Does](#what-it-does)
+- [Architecture](#architecture)
+- [Hardware Bill of Materials](#hardware-bill-of-materials)
+- [Important Constraints](#important-constraints)
+- [Quick Start](#quick-start)
+- [Repository Layout](#repository-layout)
+- [Component READMEs](#component-readmes)
+- [Full Documentation](#full-documentation)
 
-## Getting Started
+---
 
-### 1. Server Setup
+## What It Does
 
-Navigate to the `server/` directory, install dependencies, and configure environment variables:
+NightSafe runs on a Raspberry Pi 5 worn or placed near the user. It continuously:
+
+1. **Listens** to the microphone with WebRTC VAD to detect speech activity without storing audio
+2. **Transcribes** speech segments on-device using a faster-whisper Bangla ASR model
+3. **Classifies** the transcript through a two-stage PyTorch model (distress → urgency)
+4. **Reads heart rate** from a DFRobot SEN0213 ECG sensor via MCP3008 ADC over SPI
+5. **Locates** the device via SIM808 GPS over serial UART
+6. **Sends an SMS** through the Textbee API (relayed via an Android phone with a SIM card)
+7. **Syncs the alert** to a MongoDB backend over WebSocket (Socket.IO)
+8. **Displays everything** on a Next.js web dashboard in real time
+
+No audio is ever stored or uploaded. Only the transcript text is stored, and only when an alert is actually triggered.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    MIC["🎙 Microphone\nBoya BY-M1"] --> VAD["WebRTC VAD\nVadSegmenter"]
+    VAD -->|speech segment| ASR["faster-whisper\nBangla int8\nBanglaASR"]
+    ASR -->|transcript| CLS["PyTorch Classifier\nStage 1: distress?\nStage 2: urgent?"]
+    CLS -->|distress + urgent| PRI["Priority Engine\nHigh / Medium"]
+
+    ECG["🫀 DFRobot SEN0213\nECG Sensor"] --> ADC["MCP3008 ADC\n250 Hz SPI"]
+    ADC --> HRM["HeartMonitor\nButterworth 5–20 Hz\nBPM via find_peaks"]
+    HRM --> PRI
+
+    GPS["📡 SIM808 GNSS\nUART AT Commands"] --> GpsPoller
+    GpsPoller --> PRI
+
+    PRI --> OUTBOX["SQLite Outbox\npending / sent /\nsuppressed / expired"]
+    OUTBOX --> SMS["SMS via Textbee\nAndroid Phone → SIM"]
+    OUTBOX --> CLOUD["Socket.IO /device\nBackend Server"]
+
+    CLOUD --> MONGODB["MongoDB\nUsers · Devices\nContacts · Alerts"]
+    MONGODB --> API["REST API\nExpress 5"]
+    CLOUD --> WS["Socket.IO /client\nBrowser"]
+    API --> WEB["Next.js Dashboard\nLive telemetry\nAlert history"]
+    WS --> WEB
+
+    BUZZER["🔊 Piezo Buzzer\nGPIO"] --- PRI
+```
+
+---
+
+## Hardware Bill of Materials
+
+| Component | Purpose | Interface |
+|-----------|---------|-----------|
+| Raspberry Pi 5 | Main compute unit | — |
+| DFRobot SEN0213 ECG sensor | Hobby-grade ECG signal (Lead I) | Analogue → MCP3008 |
+| MCP3008 10-bit ADC | Digitises ECG at 250 Hz | SPI (CE0) |
+| SIM808 GPS/GPRS module | GNSS location fixes | UART `/dev/ttyAMA0` |
+| Android phone with SIM | SMS relay via Textbee | HTTPS API |
+| Piezo buzzer | Audible feedback patterns | GPIO |
+| Boya BY-M1 microphone | Voice input | ALSA / sounddevice |
+
+> **Note:** The SIM808 is used for GPS only. SMS is sent through the Textbee HTTPS API via a paired Android phone. The SIM808 does not send SMS.
+
+---
+
+## Important Constraints
+
+> [!IMPORTANT]
+> These are factual properties of the system, not aspirational claims.
+
+- **Audio is never stored or uploaded.** Only the transcript of an actual alert event is stored in MongoDB.
+- **SMS routing:** All SMS messages leave the device via the Textbee HTTPS API through an Android phone that holds the SIM card. The SIM808 module is GPS-only.
+- **ECG is hobby-grade.** The heart rate reading is a signal derived from a hobby sensor and a simple peak-detection algorithm. It is not a medical device and provides no clinical diagnosis.
+- **One device per account.** Each user account may pair exactly one NightSafe device.
+- **TLS only.** All backend communication uses HTTPS or WSS. There is no plaintext fallback.
+- **Bangla speech only.** The ASR model is tuned for Bangla. Other languages will produce poor transcription.
+- **Classification is two-stage.** Stage 1 determines distress vs non-distress. Stage 2 (run only after Stage 1 passes) determines urgency. Both must pass for an alert to be raised.
+
+---
+
+## Quick Start
+
+### 1 — Backend Server
 
 ```bash
 cd server
+cp .env.example .env          # fill in MONGODB_URI, JWT_SECRET
 npm install
-cp .env.example .env
-```
-
-#### Environment Variables (Server)
-- `PORT`
-- `MONGODB_URI`
-- `JWT_SECRET`
-- `CORS_ORIGIN`
-- `DEVICE_TOKEN`
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
-### 2. Web Frontend Setup
-
-Navigate to the `web/` directory, install dependencies, and configure environment variables:
+### 2 — Web Dashboard
 
 ```bash
 cd web
+cp .env.example .env.local    # set NEXT_PUBLIC_API_URL
 npm install
-cp .env.example .env.local
-```
-
-#### Environment Variables (Web)
-- `NEXT_PUBLIC_API_URL`
-
-Start the Next.js development server:
-
-```bash
 npm run dev
 ```
 
-### 3. Database Seeding & Mock Device Simulation
+Open [http://localhost:3000](http://localhost:3000), register, and pair a device.
 
-From the `server/` directory:
+### 3 — Pi Daemon
 
-- **Seed a New Device**: Generates a new hardware device with authentication token and 8-character pairing code:
-  ```bash
-  npm run seed
-  ```
-- **Inspect Configured Device**: Prints the pairing code and current owner for the configured `DEVICE_TOKEN`:
-  ```bash
-  npm run device
-  ```
-- **Run Mock Device Simulator**: Simulates a physical unit emitting live heart rate, GPS coordinates, and sample distress alerts:
-  ```bash
-  npm run mock
-  ```
+```bash
+cd pi
+python -m venv .venv
+.venv/bin/pip install -r nsd/requirements.txt
+cp .env.example .env          # fill in BACKEND_URL, TEXTBEE_*, DEVICE_ID, DEVICE_SECRET
+.venv/bin/python -m nsd.main
+```
 
-## Raspberry Pi Daemon
+For dry-run / testing without real hardware:
 
-For setup, dependencies, hardware pinouts, and running the `nsd` daemon on the physical Raspberry Pi 5, refer to [pi/README.md](file:///home/nilanjana/Web%20Development/nightsafe/pi/README.md).
+```bash
+NSD_FAKE_MODELS=1 SMS_DRY_RUN=1 .venv/bin/python -m nsd.main --text "আমাকে বাঁচাও"
+```
 
+---
+
+## Repository Layout
+
+```
+nightsafe/
+├── pi/                     # Raspberry Pi 5 daemon
+│   └── nsd/                # Python package (nsd = NightSafe Daemon)
+│       ├── main.py         # Entry point
+│       ├── audio.py        # VAD + microphone
+│       ├── asr.py          # faster-whisper Bangla transcription
+│       ├── classify.py     # Two-stage distress classifier
+│       ├── heart.py        # ECG heart rate monitor
+│       ├── gps.py          # SIM808 GPS poller
+│       ├── sms.py          # Textbee SMS dispatch
+│       ├── delivery.py     # Delivery thread (SMS + cloud sync)
+│       ├── cloud.py        # Socket.IO cloud client
+│       ├── outbox.py       # SQLite alert outbox
+│       ├── buzzer.py       # Piezo buzzer patterns
+│       ├── config.py       # Environment config
+│       ├── priority.py     # Priority decision logic
+│       └── check.py        # Hardware diagnostic CLI
+├── server/                 # Node.js / Express backend
+│   └── src/
+│       ├── index.ts        # App entry point
+│       ├── config.ts       # Environment config
+│       ├── auth.ts         # JWT helpers + middleware
+│       ├── db.ts           # Mongoose schemas + connectDb
+│       ├── routes.ts       # REST API endpoints
+│       └── socket.ts       # Socket.IO namespaces + handlers
+├── web/                    # Next.js 15 App Router dashboard
+│   └── src/
+│       ├── app/            # Pages (dashboard, alerts, contacts, settings)
+│       ├── components/     # Sparkline, LiveMap, …
+│       ├── hooks/          # useLive, useDevice, useNow
+│       └── lib/            # socket, auth, format, types
+├── nightsafe_laptop_website.py  # Reference: laptop audio source (dev tool)
+└── README.md
+```
+
+---
+
+## Component READMEs
+
+| Component | README |
+|-----------|--------|
+| Pi daemon | [pi/README.md](pi/README.md) |
+| Backend server | [server/README.md](server/README.md) |
+| Web dashboard | [web/README.md](web/README.md) |
+
+---
+
+## Full Documentation
+
+For a complete code-level walkthrough of every module, function, and data flow, see **[DOCUMENTATION.md](DOCUMENTATION.md)**.
