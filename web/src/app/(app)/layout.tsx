@@ -95,15 +95,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                         <button
                                             type="button"
                                             onClick={() => setProfileOpen((p) => !p)}
-                                            className="flex items-center gap-2 rounded-lg p-1 hover:bg-surface-container transition-colors"
+                                            className="flex items-center gap-1.5 rounded-lg p-1 hover:bg-surface-container transition-colors"
                                             aria-label="User menu"
                                         >
                                             <div className="w-8 h-8 rounded-full bg-primary-container text-tertiary-fixed-dim font-bold text-xs flex items-center justify-center ring-1 ring-outline-variant/40">
-                                                {session.name ? session.name.slice(0, 2).toUpperCase() : "U"}
+                                                <span className="material-symbols-outlined text-[18px]">person</span>
                                             </div>
-                                            <span className="hidden sm:inline text-xs font-semibold text-primary max-w-[100px] truncate">
-                                                {session.name}
-                                            </span>
                                             <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
                                                 expand_more
                                             </span>
