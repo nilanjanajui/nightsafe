@@ -46,7 +46,7 @@ export default function LiveMap({ lat, lng }: { lat: number; lng: number }) {
                 <span className="h-2 w-2 rounded-full bg-on-tertiary-container animate-pulse" />
                 <div>
                     <span className="font-semibold text-surface-bright block">Active GPS Track</span>
-                    <span className="font-mono text-[10px] text-primary-fixed-dim">Accuracy ±4m · Sat Lock</span>
+                    <span className="font-mono text-[10px] text-primary-fixed-dim">SIM808 GNSS · Active Lock</span>
                 </div>
             </div>
 

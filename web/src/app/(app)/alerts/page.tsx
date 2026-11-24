@@ -14,7 +14,6 @@ const FILTERS = [
     ["ALL", "All"],
     ["HIGH", "High Priority"],
     ["MEDIUM", "Medium"],
-    ["SYSTEM", "System Check"],
 ] as const;
 type Filter = (typeof FILTERS)[number][0];
 type Page = { items: AlertItem[]; nextCursor: string | null };
@@ -40,7 +39,6 @@ export default function AlertsPage() {
             try {
                 const qs = new URLSearchParams({ limit: "20" });
                 if (filter === "HIGH" || filter === "MEDIUM") qs.set("priority", filter);
-                // SYSTEM filter is UI-only (no backend support), so we fetch all and show empty state
                 const page = await request<Page>(`/devices/${id}/alerts?${qs}`);
                 if (!active) return;
                 setItems(page.items);
@@ -385,14 +383,14 @@ export default function AlertsPage() {
                                             “{activeItem.transcript}”
                                         </div>
                                         <p className="text-[11px] text-on-surface-variant pt-1 border-t border-outline-variant/20">
-                                            Bangla Neural Speech Trigger · 300ms verification window
+                                            Bangla Whisper speech model · On-device sequence classification
                                         </p>
                                     </div>
 
-                                    {/* Two stage architecture breakdown */}
+                                    {/* Verification breakdown */}
                                     <div className="space-y-2">
                                         <span className="font-mono text-[10px] uppercase font-bold text-primary block">
-                                            Two-Stage Architecture Verification
+                                            Pipeline Verification
                                         </span>
                                         <div className="rounded-xl bg-surface-container/60 p-3 border border-outline-variant/30 flex items-start gap-2.5">
                                             <span className="material-symbols-outlined text-[16px] text-on-tertiary-container mt-0.5">
@@ -403,7 +401,21 @@ export default function AlertsPage() {
                                                     <span>Stage 1: Distress Speech Match</span>
                                                 </div>
                                                 <p className="text-[11px] text-on-surface-variant mt-0.5">
-                                                    Audio matched on-device neural vocabulary.
+                                                    Audio transcribed and classified as distress phrase.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-xl bg-surface-container/60 p-3 border border-outline-variant/30 flex items-start gap-2.5">
+                                            <span className="material-symbols-outlined text-[16px] text-on-tertiary-container mt-0.5">
+                                                psychology
+                                            </span>
+                                            <div className="flex-1">
+                                                <div className="flex justify-between font-bold text-primary text-xs">
+                                                    <span>Stage 2: Urgency check (text classifier)</span>
+                                                </div>
+                                                <p className="text-[11px] text-on-surface-variant mt-0.5">
+                                                    Distress utterance confirmed urgent by second-stage classifier.
                                                 </p>
                                             </div>
                                         </div>
@@ -414,11 +426,12 @@ export default function AlertsPage() {
                                             </span>
                                             <div className="flex-1">
                                                 <div className="flex justify-between font-bold text-primary text-xs">
-                                                    <span>Stage 2: Urgency check (text classifier)</span>
+                                                    <span>Biometric Priority Evaluation</span>
                                                 </div>
                                                 <p className="text-[11px] text-on-surface-variant mt-0.5">
                                                     Heart rate sensor reported{" "}
-                                                    <strong>{activeItem.bpm !== null ? `${Math.round(activeItem.bpm)} BPM` : "telemetry"}</strong>.
+                                                    <strong>{activeItem.bpm !== null ? `${Math.round(activeItem.bpm)} BPM` : "unavailable"}</strong>{" "}
+                                                    ({activeItem.priority} priority assigned).
                                                 </p>
                                             </div>
                                         </div>
