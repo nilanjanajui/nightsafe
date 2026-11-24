@@ -64,11 +64,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                             <Link
                                                 key={item.href}
                                                 href={item.href}
-                                                className={`px-3.5 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all ${
-                                                    active
+                                                className={`px-3.5 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all ${active
                                                         ? "bg-secondary-container text-primary font-bold shadow-xs relative after:content-[''] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-[2px] after:bg-on-tertiary-container"
                                                         : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                                                }`}
+                                                    }`}
                                             >
                                                 {item.label}
                                             </Link>
@@ -81,11 +80,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     {/* Online / Offline status badge */}
                                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container border border-outline-variant/40 text-[11px] font-semibold text-primary">
                                         <span
-                                            className={`h-2 w-2 rounded-full ${
-                                                online
+                                            className={`h-2 w-2 rounded-full ${online
                                                     ? "bg-on-tertiary-container animate-pulse"
                                                     : "bg-outline"
-                                            }`}
+                                                }`}
                                         />
                                         <span className="hidden sm:inline font-mono uppercase text-[10px] tracking-wider">
                                             {online ? "Online" : "Offline"}

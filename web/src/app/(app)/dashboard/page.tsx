@@ -30,7 +30,7 @@ export default function Dashboard() {
         let alive = true;
         request<Contact[]>("/contacts")
             .then((c) => alive && setContactCount(c.length))
-            .catch(() => {});
+            .catch(() => { });
         return () => {
             alive = false;
         };
@@ -41,7 +41,7 @@ export default function Dashboard() {
         let alive = true;
         request<{ items: AlertItem[] }>(`/devices/${device.id}/alerts?limit=1`)
             .then((r) => alive && setRecentAlert(r.items[0] ?? null))
-            .catch(() => {});
+            .catch(() => { });
         return () => {
             alive = false;
         };
@@ -100,9 +100,6 @@ export default function Dashboard() {
     const stale = online && live.at !== null && now - Date.parse(live.at) > 15000;
     const nodeTag = `NODE_${device.id.slice(-6).toUpperCase()}`;
 
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-
     return (
         <div className="space-y-8">
             {/* PAGE HEADER */}
@@ -124,12 +121,12 @@ export default function Dashboard() {
                         </span>
                     </div>
                     <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">
-                        {greeting}, {session?.name ?? "Operator"}.
+                        Live Telemetry
                     </h1>
                     <p className="font-body-md text-body-md text-on-surface-variant">
                         {elevated
                             ? "Elevated heart rate detected. Monitoring active."
-                            : "Everything looks normal. Device is watching over you."}
+                            : "Device is watching over you."}
                     </p>
                 </div>
 
@@ -281,10 +278,10 @@ export default function Dashboard() {
                                 {live.at
                                     ? `Telemetry synced ${ago(live.at, now).replace(" ago", "")} ago`
                                     : online
-                                    ? "Waiting for stream..."
-                                    : device.lastSeenAt
-                                    ? `Last seen ${formatDateTime(device.lastSeenAt)}`
-                                    : "Never connected"}
+                                        ? "Waiting for stream..."
+                                        : device.lastSeenAt
+                                            ? `Last seen ${formatDateTime(device.lastSeenAt)}`
+                                            : "Never connected"}
                             </span>
                         </div>
                     </div>
@@ -308,11 +305,10 @@ export default function Dashboard() {
                             </div>
                             <div className="mt-4 flex items-center gap-3">
                                 <span
-                                    className={`px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold tracking-wider uppercase ${
-                                        elevated
-                                            ? "bg-red-500/20 text-red-200 border border-red-500/40"
-                                            : "bg-surface-container-high/15 text-primary-fixed-dim border border-primary-fixed-dim/20"
-                                    }`}
+                                    className={`px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold tracking-wider uppercase ${elevated
+                                        ? "bg-red-500/20 text-red-200 border border-red-500/40"
+                                        : "bg-surface-container-high/15 text-primary-fixed-dim border border-primary-fixed-dim/20"
+                                        }`}
                                 >
                                     {elevated ? "Elevated" : "Normal"}
                                 </span>
@@ -555,11 +551,10 @@ export default function Dashboard() {
                         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                             <div className="flex flex-row sm:flex-col items-start gap-2 shrink-0">
                                 <span
-                                    className={`px-2.5 py-1 rounded font-label-sm text-label-sm font-bold uppercase tracking-wider ${
-                                        recentAlert.priority === "HIGH"
-                                            ? "bg-primary-container text-on-tertiary-container border border-on-tertiary-container/30"
-                                            : "bg-secondary-container text-on-secondary-container"
-                                    }`}
+                                    className={`px-2.5 py-1 rounded font-label-sm text-label-sm font-bold uppercase tracking-wider ${recentAlert.priority === "HIGH"
+                                        ? "bg-primary-container text-on-tertiary-container border border-on-tertiary-container/30"
+                                        : "bg-secondary-container text-on-secondary-container"
+                                        }`}
                                 >
                                     {recentAlert.priority}
                                 </span>
