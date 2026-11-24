@@ -318,22 +318,35 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        {/* Signature Waveform Monitor */}
+                        {/* Heart Rate Telemetry & Trend */}
                         <div className="lg:col-span-8 flex flex-col justify-center space-y-2">
                             <div className="relative w-full rounded-xl bg-primary/40 p-3 flex flex-col justify-between overflow-hidden shadow-inner border border-primary-fixed-dim/15">
                                 <div className="w-full flex items-center justify-between text-[10px] font-label-sm text-on-primary-container/70 border-b border-dashed border-on-tertiary-container/30 pb-0.5">
-                                    <span className="tracking-wider uppercase">Baseline Upper Band</span>
+                                    <span className="tracking-wider uppercase">
+                                        {bpmVal !== null ? `Detected: ${bpmVal} BPM` : "Reading: Not reported"}
+                                    </span>
                                     <span className="font-telemetry-num text-tertiary-fixed-dim/80">Threshold {device.bpmThreshold} BPM</span>
                                 </div>
                                 <Sparkline values={live.trend} threshold={device.bpmThreshold} dark={true} bpm={bpmVal ?? undefined} />
-                                <div className="flex items-center justify-end font-label-sm text-label-sm text-on-primary-container/70 pt-1">
-                                    <span>Active Sampling: ECG sensor</span>
+                                <div className="flex items-center justify-between font-label-sm text-label-sm text-on-primary-container/70 pt-1">
+                                    <span>
+                                        {live.trend.length > 0
+                                            ? `Trend: ${live.trend.length} reading${live.trend.length > 1 ? "s" : ""} from device`
+                                            : "No trend data yet"}
+                                    </span>
+                                    <span>{bpmVal !== null ? `Live: ${bpmVal} BPM` : "Sensor: No signal"}</span>
                                 </div>
                             </div>
                             <p className="font-body-sm text-body-sm text-on-primary-container pt-1">
                                 {stale
                                     ? "Telemetry stream paused (stale link)"
-                                    : `Heart rate within your configured range (60–${device.bpmThreshold} BPM) · Synchronized`}
+                                    : !online
+                                    ? "Device offline · No live telemetry"
+                                    : bpmVal !== null
+                                    ? elevated
+                                        ? `Elevated heart rate detected: ${bpmVal} BPM (above ${device.bpmThreshold} BPM threshold) · Live`
+                                        : `Detected heart rate: ${bpmVal} BPM (threshold ${device.bpmThreshold} BPM) · Live`
+                                    : "No heart rate detected by sensor · Waiting for reading"}
                             </p>
                         </div>
                     </div>
