@@ -41,15 +41,6 @@ export default function LiveMap({ lat, lng }: { lat: number; lng: number }) {
                 <RecenterMap lat={lat} lng={lng} />
             </MapContainer>
 
-            {/* Tactical Floating Pill Over Map */}
-            <div className="pointer-events-none absolute top-3 left-3 z-10 flex items-center gap-2 rounded-lg bg-primary-container/90 px-3 py-1.5 text-xs text-inverse-on-surface shadow-md backdrop-blur-xs border border-primary-fixed-dim/20">
-                <span className="h-2 w-2 rounded-full bg-on-tertiary-container animate-pulse" />
-                <div>
-                    <span className="font-semibold text-surface-bright block">Active GPS Track</span>
-                    <span className="font-mono text-[10px] text-primary-fixed-dim">SIM808 GNSS · Active Lock</span>
-                </div>
-            </div>
-
             {/* Tactical Compass Badge */}
             <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex items-center justify-center rounded-lg bg-surface-container-lowest/90 p-1.5 text-on-surface-variant shadow-xs backdrop-blur-xs border border-outline-variant/30">
                 <span className="material-symbols-outlined text-[18px]">explore</span>
