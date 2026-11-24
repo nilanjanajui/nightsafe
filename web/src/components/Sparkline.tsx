@@ -16,7 +16,7 @@ export default function Sparkline({
     bpm: propBpm,
 }: SparklineProps) {
     const w = 700;
-    const h = 64;
+    const h = 76;
 
     // Use original readings detected from the device
     const activeValues = useMemo(() => {
@@ -32,21 +32,21 @@ export default function Sparkline({
 
     const strokeColor = dark
         ? isElevated
-            ? "#ba1a1a"
-            : "#af914c"
+            ? "#ef4444"
+            : "#facc15"
         : isElevated
-        ? "#ba1a1a"
+        ? "#dc2626"
         : "#28301c";
 
     const glowColor = isElevated
-        ? "rgba(186,26,26,0.6)"
+        ? "rgba(239,68,68,0.6)"
         : dark
-        ? "rgba(175,145,76,0.45)"
+        ? "rgba(250,204,21,0.4)"
         : "rgba(40,48,28,0.25)";
 
     const { pathData, thresholdY, lastPoint } = useMemo(() => {
         if (activeValues.length === 0) {
-            return { pathData: `M 0 ${h / 2} L ${w} ${h / 2}`, thresholdY: 12, lastPoint: null };
+            return { pathData: `M 0 ${h / 2} L ${w} ${h / 2}`, thresholdY: 22, lastPoint: null };
         }
 
         const minVal = Math.min(...activeValues, threshold - 15, 40);
@@ -55,7 +55,7 @@ export default function Sparkline({
 
         const getY = (val: number) => {
             const normalized = (val - minVal) / range;
-            return Math.round(h - 12 - normalized * (h - 24));
+            return Math.round(h - 14 - normalized * (h - 28));
         };
 
         const tY = getY(threshold);
@@ -65,12 +65,12 @@ export default function Sparkline({
             return {
                 pathData: `M 0 ${singleY} L ${w} ${singleY}`,
                 thresholdY: tY,
-                lastPoint: [w - 10, singleY] as [number, number],
+                lastPoint: [w - 12, singleY] as [number, number],
             };
         }
 
         const pts = activeValues.map((v, i) => {
-            const x = (i / (activeValues.length - 1)) * (w - 20) + 10;
+            const x = (i / (activeValues.length - 1)) * (w - 24) + 12;
             const y = getY(v);
             return [x, y] as [number, number];
         });
@@ -86,7 +86,7 @@ export default function Sparkline({
             <svg
                 viewBox={`0 0 ${w} ${h}`}
                 preserveAspectRatio="none"
-                className="w-full h-16"
+                className="w-full h-20"
                 role="img"
                 aria-label={
                     latestVal !== null
@@ -108,25 +108,59 @@ export default function Sparkline({
 
                 <rect width={w} height={h} fill="url(#ecg-grid)" />
 
-                {/* Threshold Alert Line */}
-                <line
-                    x1="0"
-                    x2={w}
-                    y1={thresholdY}
-                    y2={thresholdY}
-                    stroke={dark ? "#af914c" : "#ba1a1a"}
-                    strokeOpacity={dark ? "0.35" : "0.3"}
-                    strokeDasharray="4 4"
-                    strokeWidth="1"
-                    vectorEffect="non-scaling-stroke"
+                {/* Elevated Alert Danger Zone (Area above threshold) */}
+                <rect
+                    x="0"
+                    y="0"
+                    width={w}
+                    height={Math.max(0, thresholdY)}
+                    fill={isElevated ? "#ef4444" : "#ba1a1a"}
+                    fillOpacity={dark ? "0.12" : "0.06"}
                 />
+
+                {/* Threshold Alert Line */}
+                <g>
+                    <line
+                        x1="0"
+                        x2={w}
+                        y1={thresholdY}
+                        y2={thresholdY}
+                        stroke={isElevated ? "#ef4444" : "#f59e0b"}
+                        strokeOpacity={dark ? "0.85" : "0.75"}
+                        strokeDasharray="5 4"
+                        strokeWidth="1.5"
+                        vectorEffect="non-scaling-stroke"
+                    />
+
+                    {/* Integrated Threshold Badge Pill */}
+                    <rect
+                        x={w - 170}
+                        y={Math.max(2, thresholdY - 9)}
+                        width="160"
+                        height="18"
+                        rx="4"
+                        fill={dark ? "#1b2512" : "#fef2f2"}
+                        stroke={isElevated ? "#ef4444" : "#f59e0b"}
+                        strokeWidth="1"
+                        strokeOpacity="0.7"
+                    />
+                    <text
+                        x={w - 90}
+                        y={Math.max(2, thresholdY - 9) + 12.5}
+                        textAnchor="middle"
+                        fill={isElevated ? "#fca5a5" : "#fde047"}
+                        className="text-[10px] font-mono font-bold tracking-wider uppercase select-none"
+                    >
+                        Alert Limit: {threshold} BPM
+                    </text>
+                </g>
 
                 {/* Detected Readings Path */}
                 <path
                     d={pathData}
                     fill="none"
                     stroke={latestVal !== null ? strokeColor : dark ? "#575b50" : "#9ca3af"}
-                    strokeWidth={latestVal !== null ? "2.25" : "1.5"}
+                    strokeWidth={latestVal !== null ? "2.5" : "1.5"}
                     strokeDasharray={latestVal === null ? "4 4" : undefined}
                     strokeLinejoin="round"
                     strokeLinecap="round"
@@ -141,14 +175,14 @@ export default function Sparkline({
                             cx={lastPoint[0]}
                             cy={lastPoint[1]}
                             r="5"
-                            fill={isElevated ? "#ffdad6" : "#ffdf99"}
+                            fill={isElevated ? "#fca5a5" : "#fef08a"}
                             className="animate-ping opacity-60"
                         />
                         <circle
                             cx={lastPoint[0]}
                             cy={lastPoint[1]}
                             r="3.5"
-                            fill={isElevated ? "#ba1a1a" : "#ffdf99"}
+                            fill={isElevated ? "#ef4444" : "#facc15"}
                             className="animate-pulse"
                         />
                     </g>
